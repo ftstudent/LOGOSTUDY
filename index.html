@@ -130,7 +130,7 @@
       gap: 10px;
     }
 
-    .form.two { grid-template-columns: 126px 1fr auto; align-items: end; }
+    .form.two { grid-template-columns: 112px 1fr 150px 128px auto; align-items: end; }
     .form.task { grid-template-columns: 110px 1fr 86px auto; align-items: end; }
 
     label {
@@ -466,6 +466,18 @@
             <label>배치 이름
               <input id="vocabName" required placeholder="예: TEPS 숙어 12">
             </label>
+            <label>학습일
+              <input id="vocabLearnedAt" type="date">
+            </label>
+            <label>다음 복습
+              <select id="vocabNextReview">
+                <option value="none">아직 학습 전</option>
+                <option value="1">+1일 복습부터</option>
+                <option value="3">+3일 복습부터</option>
+                <option value="7">+7일 복습부터</option>
+                <option value="14">+14일 복습부터</option>
+              </select>
+            </label>
             <button class="btn" type="submit">등록</button>
           </form>
         </section>
@@ -778,6 +790,12 @@
         return Math.round(base * pct / 100) + bonus;
       }
 
+      function completedBeforeNextReview(nextReview) {
+        const target = Number(nextReview);
+        if (!INTERVALS.includes(target)) return [];
+        return INTERVALS.filter(interval => interval < target);
+      }
+
       function dots(done) {
         return INTERVALS.map((interval, index) => {
           let cls = 'dot';
@@ -990,18 +1008,26 @@
         event.preventDefault();
         const name = $('vocabName').value.trim();
         if (!name) return;
+        const nextReview = $('vocabNextReview').value;
+        const learnedAt = $('vocabLearnedAt').value || null;
+        if (nextReview !== 'none' && !learnedAt) {
+          toast('복습 회차를 지정하려면 학습일을 입력하세요.');
+          return;
+        }
         const data = load();
         data.batches.push({
           id: uid(),
           subject: $('vocabSubject').value,
           name,
           registeredAt: today(),
-          learnedAt: null,
-          done: [],
+          learnedAt,
+          done: completedBeforeNextReview(nextReview),
         });
         save(data);
         $('vocabName').value = '';
-        toast('어휘 배치를 등록했습니다. 학습 완료 시 XP가 지급됩니다.');
+        $('vocabLearnedAt').value = '';
+        $('vocabNextReview').value = 'none';
+        toast(learnedAt ? `복습 상태를 반영해 등록했습니다.` : '어휘 배치를 등록했습니다. 학습 완료 시 XP가 지급됩니다.');
         render();
       });
 

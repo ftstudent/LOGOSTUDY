@@ -37,7 +37,7 @@
     button, input, select { font: inherit; }
 
     .app {
-      width: min(1040px, 100%);
+      width: min(1180px, 100%);
       margin: 0 auto;
       padding: 28px;
     }
@@ -96,7 +96,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: 1.08fr .92fr;
+      grid-template-columns: minmax(0, 1fr) 300px;
       gap: 18px;
     }
 
@@ -130,8 +130,7 @@
       gap: 10px;
     }
 
-    .form.two { grid-template-columns: 104px minmax(260px, 1.8fr) 150px 128px auto; align-items: end; }
-    .form.task { grid-template-columns: 110px 1fr 86px auto; align-items: end; }
+    .form.two, .form.task { grid-template-columns: 1fr; align-items: stretch; }
 
     label {
       display: grid;
@@ -378,10 +377,21 @@
       align-items: end;
     }
 
-    .sync-line {
+    .sync-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
       margin-top: 10px;
-      color: #aeb5c5;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      color: #cbd1df;
       font-size: 12px;
+      font-weight: 700;
+      box-shadow: none;
+      cursor: default;
     }
 
     @media (max-width: 760px) {
@@ -399,8 +409,7 @@
     <header class="top">
       <div>
         <h1>LOGOSTUDY</h1>
-        <div class="subtitle">어휘는 1-3-7-14 복습 루프, 깊은 공부는 필요할 때 과제로 넣기. <span id="appStatus">클라우드 연결 중</span></div>
-        <div class="sync-line" id="syncStatus">동기화 상태 확인 중</div>
+        <button class="sync-button" id="syncStatus" type="button">클라우드 연결 중</button>
       </div>
       <div class="level-box">
         <div class="level-row">
@@ -640,13 +649,12 @@
       async function loadCloudState() {
         const { data, error } = await supabase
           .from('study_public_state')
-          .select('data')
+          .select('data,updated_at')
           .eq('id', 'default')
           .maybeSingle();
 
         if (error) {
           console.error(error);
-          $('appStatus').textContent = '클라우드 연결 실패';
           $('syncStatus').textContent = `클라우드 불러오기 실패: ${error.message}`;
           toast('Supabase SQL 설정을 먼저 실행해야 합니다.');
           return false;
@@ -661,8 +669,8 @@
 
         localStorage.setItem(KEY, JSON.stringify(state));
         $('syncStatus').textContent = data && data.updated_at
-          ? `클라우드 불러옴 · ${new Date(data.updated_at).toLocaleString('ko-KR')}`
-          : '클라우드 초기화 완료';
+          ? `동기화 완료 · ${new Date(data.updated_at).toLocaleTimeString('ko-KR')}`
+          : '동기화 완료';
         return true;
       }
 
@@ -1133,7 +1141,7 @@
 
       const ok = await loadCloudState();
       render();
-      $('appStatus').textContent = ok ? '클라우드 동기화 중' : '로컬 임시 모드';
+      if (!ok) $('syncStatus').textContent = '로컬 임시 모드';
     }
 
     if (document.readyState === 'loading') {

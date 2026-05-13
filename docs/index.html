@@ -154,6 +154,97 @@
       box-shadow: 0 0 0 3px rgba(124,140,255,.16);
     }
 
+    .date-control {
+      position: relative;
+      display: grid;
+    }
+
+    .date-control input {
+      padding-right: 44px;
+    }
+
+    .date-toggle {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      width: 32px;
+      height: 32px;
+      transform: translateY(-50%);
+      border: 0;
+      border-radius: 10px;
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .date-picker {
+      position: absolute;
+      z-index: 10;
+      top: calc(100% + 8px);
+      left: 0;
+      width: min(300px, calc(100vw - 56px));
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #202433;
+      box-shadow: var(--shadow);
+    }
+
+    .date-picker[hidden] {
+      display: none;
+    }
+
+    .calendar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .calendar-head button,
+    .calendar-day {
+      border: 0;
+      border-radius: 9px;
+      background: rgba(255,255,255,.07);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .calendar-head button {
+      width: 30px;
+      height: 30px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .calendar-weekday {
+      color: var(--muted);
+      text-align: center;
+      font-size: 11px;
+      padding: 4px 0;
+    }
+
+    .calendar-day {
+      min-height: 32px;
+      font-size: 12px;
+    }
+
+    .calendar-day:hover,
+    .calendar-day.selected {
+      background: var(--accent);
+    }
+
+    .calendar-day.muted {
+      opacity: .35;
+    }
+
     .btn {
       border: 0;
       border-radius: 12px;
@@ -460,6 +551,11 @@
             <div class="list" id="taskList"></div>
           </div>
         </section>
+
+        <section class="panel">
+          <div class="panel-title">어휘 배치</div>
+          <div class="list" id="batchList"></div>
+        </section>
       </div>
 
       <aside>
@@ -476,7 +572,11 @@
               <input id="vocabName" required placeholder="예: TEPS 숙어 12">
             </label>
             <label>학습일
-              <input id="vocabLearnedAt" type="date">
+              <span class="date-control">
+                <input id="vocabLearnedAt" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" autocomplete="off">
+                <button class="date-toggle" type="button" id="vocabDateToggle" aria-label="학습일 달력 열기">▾</button>
+                <span class="date-picker" id="vocabDatePicker" hidden></span>
+              </span>
             </label>
             <label>다음 복습
               <select id="vocabNextReview">
@@ -536,10 +636,6 @@
           <div class="bars" id="xpBars"></div>
         </section>
 
-        <section class="panel">
-          <div class="panel-title">어휘 배치</div>
-          <div class="list" id="batchList"></div>
-        </section>
       </aside>
     </section>
   </main>
@@ -696,6 +792,55 @@
       function fmtDate(date) {
         const d = new Date(date + 'T00:00:00');
         return `${d.getMonth() + 1}/${d.getDate()}`;
+      }
+
+      function parseIsoDate(value) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return null;
+        const d = new Date(value + 'T00:00:00');
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+
+      let calendarMonth = parseIsoDate(today());
+
+      function renderCalendar() {
+        const picker = $('vocabDatePicker');
+        const selected = $('vocabLearnedAt').value;
+        const year = calendarMonth.getFullYear();
+        const month = calendarMonth.getMonth();
+        const first = new Date(year, month, 1);
+        const start = new Date(first);
+        start.setDate(1 - first.getDay());
+        const days = Array.from({ length: 42 }, (_, index) => {
+          const d = new Date(start);
+          d.setDate(start.getDate() + index);
+          const iso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+          const cls = [
+            'calendar-day',
+            d.getMonth() === month ? '' : 'muted',
+            iso === selected ? 'selected' : '',
+          ].filter(Boolean).join(' ');
+          return `<button class="${cls}" type="button" data-date="${iso}">${d.getDate()}</button>`;
+        }).join('');
+        picker.innerHTML = `
+          <div class="calendar-head">
+            <button type="button" data-calendar-prev aria-label="이전 달">‹</button>
+            <span>${year}년 ${month + 1}월</span>
+            <button type="button" data-calendar-next aria-label="다음 달">›</button>
+          </div>
+          <div class="calendar-grid">
+            ${['일','월','화','수','목','금','토'].map(day => `<div class="calendar-weekday">${day}</div>`).join('')}
+            ${days}
+          </div>`;
+      }
+
+      function openCalendar() {
+        calendarMonth = parseIsoDate($('vocabLearnedAt').value) || parseIsoDate(today());
+        renderCalendar();
+        $('vocabDatePicker').hidden = false;
+      }
+
+      function closeCalendar() {
+        $('vocabDatePicker').hidden = true;
       }
 
       function uid() {
@@ -1061,6 +1206,33 @@
       });
 
       document.body.addEventListener('click', event => {
+        const dateToggle = event.target.closest('#vocabDateToggle, #vocabLearnedAt');
+        if (dateToggle) {
+          openCalendar();
+          return;
+        }
+
+        if (event.target.closest('[data-calendar-prev]')) {
+          calendarMonth.setMonth(calendarMonth.getMonth() - 1);
+          renderCalendar();
+          return;
+        }
+
+        if (event.target.closest('[data-calendar-next]')) {
+          calendarMonth.setMonth(calendarMonth.getMonth() + 1);
+          renderCalendar();
+          return;
+        }
+
+        const calendarDay = event.target.closest('[data-date]');
+        if (calendarDay) {
+          $('vocabLearnedAt').value = calendarDay.dataset.date;
+          closeCalendar();
+          return;
+        }
+
+        if (!event.target.closest('.date-control')) closeCalendar();
+
         const timerButton = event.target.closest('[data-timer]');
         if (timerButton) {
           startTimer(Number(timerButton.dataset.timer));

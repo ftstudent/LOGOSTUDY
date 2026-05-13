@@ -50,11 +50,58 @@
       margin-bottom: 20px;
     }
 
-    h1 {
-      margin: 0 0 7px;
-      font-size: 34px;
-      line-height: 1.15;
-      font-weight: 800;
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 9px;
+    }
+
+    .loop-mark {
+      display: grid;
+      grid-template-columns: repeat(2, 9px);
+      grid-template-rows: repeat(2, 9px);
+      gap: 5px;
+      padding: 9px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(70,194,168,.16), rgba(246,198,107,.13));
+      box-shadow: inset 0 0 18px rgba(255,255,255,.035), 0 10px 26px rgba(0,0,0,.20);
+    }
+
+    .loop-mark span {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent2);
+    }
+
+    .loop-mark span:nth-child(2) { background: var(--xp); }
+    .loop-mark span:nth-child(3) { background: var(--accent); }
+    .loop-mark span:nth-child(4) { background: #ff8aa8; }
+
+    .wordmark {
+      display: flex;
+      align-items: baseline;
+      gap: 3px;
+      margin: 0;
+      line-height: 1;
+      font-size: 31px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .wordmark .logo-part {
+      color: var(--text);
+    }
+
+    .wordmark .study-part {
+      color: var(--accent2);
+    }
+
+    .wordmark .dot {
+      color: var(--xp);
+      padding: 0 1px;
     }
 
     .subtitle {
@@ -489,6 +536,7 @@
       .app { padding: 16px; }
       .top, .grid, .form.two, .form.task { grid-template-columns: 1fr; }
       .level-box { min-width: 0; }
+      .wordmark { font-size: 27px; }
       .item { grid-template-columns: 1fr; }
       .stats { grid-template-columns: 1fr; }
       .auth-form { grid-template-columns: 1fr; }
@@ -499,7 +547,17 @@
   <main class="app" id="app">
     <header class="top">
       <div>
-        <h1>LOGOSTUDY</h1>
+        <div class="brand" aria-label="LOGOSTUDY">
+          <div class="loop-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <h1 class="wordmark">
+            <span class="logo-part">LOGO</span><span class="dot">.</span><span class="study-part">STUDY</span>
+          </h1>
+        </div>
         <button class="sync-button" id="syncStatus" type="button">클라우드 연결 중</button>
       </div>
       <div class="level-box">

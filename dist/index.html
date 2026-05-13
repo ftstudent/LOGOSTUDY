@@ -128,6 +128,14 @@
 
     .level-name { color: var(--xp); font-weight: 800; }
     .xp-text { color: #cfd3df; }
+    .level-total {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+      color: #b7bdcb;
+      font-size: 12px;
+    }
     .meter, .progress {
       height: 9px;
       background: rgba(0,0,0,.28);
@@ -329,6 +337,38 @@
       background: linear-gradient(135deg, rgba(70,194,168,.09), rgba(124,140,255,.08)), var(--panel);
     }
 
+    .today-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .daily-card {
+      min-height: 76px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015)), var(--panel);
+      box-shadow: 0 12px 28px rgba(0,0,0,.18);
+    }
+
+    .daily-card strong {
+      display: block;
+      color: var(--xp);
+      font-size: 24px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .daily-card span {
+      display: block;
+      margin-top: 8px;
+      color: #aeb5c5;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
     .timer-row {
       display: flex;
       gap: 8px;
@@ -435,7 +475,7 @@
 
     .stats {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
       margin-bottom: 14px;
     }
@@ -520,7 +560,6 @@
       align-items: center;
       justify-content: center;
       min-height: 28px;
-      margin-top: 10px;
       padding: 6px 10px;
       border: 1px solid var(--line);
       border-radius: 999px;
@@ -532,11 +571,18 @@
       cursor: default;
     }
 
+    .app-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding: 2px 0 10px;
+    }
+
     @media (max-width: 760px) {
       .app { padding: 16px; }
       .top, .grid, .form.two, .form.task { grid-template-columns: 1fr; }
       .level-box { min-width: 0; }
       .wordmark { font-size: 27px; }
+      .today-summary { grid-template-columns: 1fr; }
       .item { grid-template-columns: 1fr; }
       .stats { grid-template-columns: 1fr; }
       .auth-form { grid-template-columns: 1fr; }
@@ -558,7 +604,6 @@
             <span class="logo-part">LOGO</span><span class="dot">.</span><span class="study-part">STUDY</span>
           </h1>
         </div>
-        <button class="sync-button" id="syncStatus" type="button">클라우드 연결 중</button>
       </div>
       <div class="level-box">
         <div class="level-row">
@@ -566,16 +611,34 @@
           <span class="xp-text" id="xpText">0 XP</span>
         </div>
         <div class="meter"><div id="xpFill"></div></div>
-        <div class="hint" id="nextXp" style="margin-top:8px">다음 레벨까지 100 XP</div>
+        <div class="level-total">
+          <span id="levelRange">0 / 100 XP</span>
+          <span id="nextXp">다음 레벨까지 100 XP</span>
+        </div>
       </div>
     </header>
 
     <section class="grid">
       <div>
+        <section class="today-summary" aria-label="오늘 학습 요약">
+          <div class="daily-card">
+            <strong id="todayXpCard">+0</strong>
+            <span>오늘 XP</span>
+          </div>
+          <div class="daily-card">
+            <strong id="todayTodoCard">0</strong>
+            <span>오늘 할 일</span>
+          </div>
+          <div class="daily-card">
+            <strong id="streakCard">0</strong>
+            <span>연속 학습일</span>
+          </div>
+        </section>
+
         <section class="panel timer">
           <div class="panel-title">
             <span>복습 타이머</span>
-            <span class="hint">시간 안에 오늘 복습을 끝내면 +15 XP</span>
+            <span class="hint">시간 안에 오늘 복습을 끝내면 +7 XP</span>
           </div>
           <div class="timer-row">
             <button class="btn secondary small" data-timer="5">5분</button>
@@ -682,12 +745,20 @@
               <div class="stat-label">총 XP</div>
             </div>
             <div class="stat">
-              <div class="stat-num" id="statMastered">0</div>
-              <div class="stat-label">완전 암기</div>
+              <div class="stat-num" id="statTodayXp">0</div>
+              <div class="stat-label">오늘 XP</div>
+            </div>
+            <div class="stat">
+              <div class="stat-num" id="statAvgXp">0</div>
+              <div class="stat-label">7일 평균</div>
             </div>
             <div class="stat">
               <div class="stat-num" id="statStreak">0</div>
               <div class="stat-label">연속 학습일</div>
+            </div>
+            <div class="stat">
+              <div class="stat-num" id="statMastered">0</div>
+              <div class="stat-label">완전 암기</div>
             </div>
           </div>
           <div class="section-title">최근 7일 XP</div>
@@ -696,6 +767,9 @@
 
       </aside>
     </section>
+    <footer class="app-footer">
+      <button class="sync-button" id="syncStatus" type="button">클라우드 연결 중</button>
+    </footer>
   </main>
 
   <div class="toast" id="toast"></div>
@@ -729,7 +803,7 @@
         review: { 1: 5, 3: 8, 7: 10, 14: 15 },
         taskBase: { light: 15, normal: 30, hard: 45, deep: 65 },
         taskPerfectBonus: { light: 5, normal: 10, hard: 15, deep: 20 },
-        timerBonus: 15,
+        timerBonus: 7,
       };
 
       const $ = id => document.getElementById(id);
@@ -948,6 +1022,20 @@
         return after > before ? LEVELS[after][0] : null;
       }
 
+      function xpOn(data, date) {
+        const entry = data.xpLog.find(x => x.date === date);
+        return entry ? entry.xp : 0;
+      }
+
+      function recentXpDays(data) {
+        const t = today();
+        return Array.from({ length: 7 }, (_, i) => {
+          const date = addDays(t, i - 6);
+          const d = new Date(date + 'T00:00:00');
+          return { label: `${d.getMonth() + 1}/${d.getDate()}`, xp: xpOn(data, date) };
+        });
+      }
+
       function pendingReviews(data) {
         const t = today();
         const overdue = [];
@@ -1132,11 +1220,19 @@
         $('levelName').textContent = `Lv.${level + 1} ${current[0]}`;
         $('xpText').textContent = `${data.xp} XP`;
         $('xpFill').style.width = `${progress}%`;
+        $('levelRange').textContent = next ? `${data.xp} / ${next[1]} XP` : `${data.xp} XP`;
         $('nextXp').textContent = next ? `다음 레벨까지 ${next[1] - data.xp} XP` : '최고 레벨 달성';
 
         const pending = pendingReviews(data);
         const tasks = data.tasks.filter(t => t.date === today() && !t.done);
-        $('todayCount').textContent = `${pending.overdue.length + pending.due.length + tasks.length}개`;
+        const todoCount = pending.overdue.length + pending.due.length + tasks.length;
+        const todayXp = xpOn(data, today());
+        const recentDays = recentXpDays(data);
+        const avgXp = Math.round(recentDays.reduce((sum, day) => sum + day.xp, 0) / recentDays.length);
+        $('todayCount').textContent = `${todoCount}개`;
+        $('todayXpCard').textContent = `+${todayXp}`;
+        $('todayTodoCard').textContent = todoCount;
+        $('streakCard').textContent = data.streak;
         $('overdueList').innerHTML = pending.overdue.length
           ? pending.overdue.map(x => reviewHtml(x, true)).join('')
           : '<div class="empty">밀린 복습이 없습니다.</div>';
@@ -1157,6 +1253,8 @@
           : '<div class="empty">아직 등록된 어휘 배치가 없습니다.</div>';
 
         $('statXp').textContent = data.xp;
+        $('statTodayXp').textContent = todayXp;
+        $('statAvgXp').textContent = avgXp;
         $('statMastered').textContent = data.batches.filter(b => b.done.length === INTERVALS.length).length;
         $('statStreak').textContent = data.streak;
         renderBars(data);
@@ -1164,13 +1262,7 @@
       }
 
       function renderBars(data) {
-        const t = today();
-        const days = Array.from({ length: 7 }, (_, i) => {
-          const date = addDays(t, i - 6);
-          const entry = data.xpLog.find(x => x.date === date);
-          const d = new Date(date + 'T00:00:00');
-          return { label: `${d.getMonth() + 1}/${d.getDate()}`, xp: entry ? entry.xp : 0 };
-        });
+        const days = recentXpDays(data);
         const max = Math.max(...days.map(d => d.xp), 1);
         $('xpBars').innerHTML = days.map(day => `
           <div class="bar-col">

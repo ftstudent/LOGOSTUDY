@@ -618,7 +618,7 @@
 
       <aside>
         <section class="panel">
-          <div class="panel-title">새 어휘 배치 <span class="hint">등록만으로는 XP 없음</span></div>
+          <div class="panel-title">새 어휘 배치</div>
           <form class="form two" id="vocabForm">
             <label>과목
               <select id="vocabSubject">
@@ -1041,6 +1041,7 @@
             <div class="report-row">
               <input type="number" min="0" max="100" value="${task.completion || 0}" data-task-percent="${task.id}" aria-label="성취도">
               <button class="btn good small" data-report-task="${task.id}">성취도 기록</button>
+              <button class="btn bad small" data-delete-task="${task.id}">삭제</button>
             </div>
           </div>`;
       }
@@ -1354,6 +1355,16 @@
           data.batches = data.batches.filter(b => b.id !== deleteButton.dataset.deleteBatch);
           save(data);
           toast('배치를 삭제했습니다.');
+          render();
+          return;
+        }
+
+        const deleteTaskButton = event.target.closest('[data-delete-task]');
+        if (deleteTaskButton) {
+          const data = load();
+          data.tasks = data.tasks.filter(t => t.id !== deleteTaskButton.dataset.deleteTask);
+          save(data);
+          toast('과제를 삭제했습니다.');
           render();
         }
       });

@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Study Loop</title>
+  <style>
+    :root {
+      --bg: #0d0f17;
+      --panel: #171a26;
+      --panel2: #202433;
+      --line: rgba(255,255,255,.08);
+      --text: #f7f2ea;
+      --muted: #a8adbb;
+      --accent: #7c8cff;
+      --accent2: #46c2a8;
+      --good: #67d083;
+      --warn: #f4b860;
+      --bad: #f17474;
+      --xp: #f6c66b;
+      --shadow: 0 18px 50px rgba(0,0,0,.34);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 16% 0%, rgba(124,140,255,.20), transparent 34%),
+        radial-gradient(circle at 92% 8%, rgba(70,194,168,.14), transparent 30%),
+        linear-gradient(180deg, #101420 0%, var(--bg) 42%, #0b0d13 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button, input, select { font: inherit; }
+
+    .app {
+      width: min(1040px, 100%);
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .top {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: start;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 7px;
+      font-size: 34px;
+      line-height: 1.15;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      color: #c2c6d2;
+      font-size: 14px;
+    }
+
+    .level-box {
+      min-width: 250px;
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(246,198,107,.16), rgba(124,140,255,.12)), var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .level-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .level-name { color: var(--xp); font-weight: 800; }
+    .xp-text { color: #cfd3df; }
+    .meter, .progress {
+      height: 9px;
+      background: rgba(0,0,0,.28);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .meter > div {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--xp), #ff8aa8);
+      transition: width .25s;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.08fr .92fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,.035), transparent), var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 14px 36px rgba(0,0,0,.22);
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .hint {
+      color: #b7bdcb;
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .form.two { grid-template-columns: 126px 1fr auto; align-items: end; }
+    .form.task { grid-template-columns: 110px 1fr 86px auto; align-items: end; }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: #b7bdcb;
+      font-size: 12px;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      background: rgba(7,9,14,.72);
+      color: var(--text);
+      padding: 11px 12px;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: rgba(124,140,255,.85);
+      box-shadow: 0 0 0 3px rgba(124,140,255,.16);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), #6f6de8);
+      white-space: nowrap;
+      font-weight: 800;
+      box-shadow: 0 10px 22px rgba(80,92,190,.22);
+    }
+
+    .btn.secondary {
+      background: rgba(255,255,255,.07);
+      color: var(--text);
+      box-shadow: none;
+    }
+    .btn.good {
+      background: rgba(103,208,131,.16);
+      color: var(--good);
+      box-shadow: none;
+    }
+    .btn.bad {
+      background: rgba(241,116,116,.14);
+      color: var(--bad);
+      box-shadow: none;
+    }
+    .btn.small { padding: 8px 10px; font-size: 12px; }
+    .btn:hover { filter: brightness(1.06); }
+    .btn:active { transform: translateY(1px); }
+
+    .timer {
+      display: grid;
+      gap: 13px;
+      background: linear-gradient(135deg, rgba(70,194,168,.09), rgba(124,140,255,.08)), var(--panel);
+    }
+
+    .timer-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .clock {
+      font-size: 46px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .clock.ok { color: var(--good); }
+    .clock.warn { color: var(--warn); }
+    .clock.bad { color: var(--bad); }
+
+    .timer-note {
+      color: #b7bdcb;
+      font-size: 13px;
+    }
+
+    .progress > div {
+      width: 0;
+      height: 100%;
+      background: var(--good);
+      transition: width .2s, background .2s;
+    }
+
+    .section {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,.07);
+    }
+    .section:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+
+    .section-title {
+      margin-bottom: 10px;
+      color: #aeb5c5;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .list { display: grid; gap: 10px; }
+
+    .item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 11px;
+      align-items: center;
+      padding: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,.035), transparent), var(--panel2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .item.overdue { border-color: rgba(241,116,116,.55); }
+
+    .tag {
+      min-width: 64px;
+      text-align: center;
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-size: 12px;
+      font-weight: 800;
+      background: rgba(124,140,255,.17);
+      color: #c9d1ff;
+    }
+
+    .tag.spanish { background: rgba(255,138,168,.16); color: #ffc4d3; }
+    .tag.task { background: rgba(70,194,168,.16); color: #bdf1e5; }
+
+    .item-main { min-width: 0; }
+    .item-title { font-weight: 800; overflow-wrap: anywhere; }
+    .item-sub { margin-top: 4px; color: #aeb5c5; font-size: 12px; }
+
+    .report-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .report-row input {
+      width: 78px;
+      padding: 8px 9px;
+    }
+
+    .dots { display: flex; gap: 5px; margin-top: 8px; }
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.17);
+    }
+    .dot.done { background: var(--good); }
+    .dot.next { box-shadow: 0 0 0 2px var(--warn) inset; }
+
+    .empty { padding: 18px 4px; color: #aeb5c5; font-size: 13px; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      background: linear-gradient(135deg, rgba(246,198,107,.12), rgba(124,140,255,.08)), var(--panel2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .stat-num { font-size: 23px; font-weight: 900; color: var(--xp); }
+    .stat-label { color: #aeb5c5; font-size: 12px; margin-top: 3px; }
+
+    .bars {
+      height: 120px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      align-items: end;
+    }
+
+    .bar-col {
+      display: grid;
+      gap: 5px;
+      align-items: end;
+      text-align: center;
+      color: #aeb5c5;
+      font-size: 11px;
+    }
+
+    .bar {
+      min-height: 3px;
+      border-radius: 6px 6px 0 0;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(18px);
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: #f7f2ea;
+      color: #111318;
+      opacity: 0;
+      pointer-events: none;
+      transition: .18s;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    [hidden] { display: none !important; }
+
+    .auth-panel {
+      width: min(440px, calc(100% - 32px));
+      margin: 12vh auto 0;
+      background: linear-gradient(180deg, rgba(255,255,255,.045), transparent), var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .auth-panel h1 {
+      font-size: 28px;
+    }
+
+    .auth-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-top: 18px;
+      align-items: end;
+    }
+
+    .sync-line {
+      margin-top: 10px;
+      color: #aeb5c5;
+      font-size: 12px;
+    }
+
+    @media (max-width: 760px) {
+      .app { padding: 16px; }
+      .top, .grid, .form.two, .form.task { grid-template-columns: 1fr; }
+      .level-box { min-width: 0; }
+      .item { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr; }
+      .auth-form { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" id="app">
+    <header class="top">
+      <div>
+        <h1>Study Loop</h1>
+        <div class="subtitle">어휘는 1-3-7-14 복습 루프, 깊은 공부는 필요할 때 과제로 넣기. <span id="appStatus">클라우드 연결 중</span></div>
+        <div class="sync-line" id="syncStatus">동기화 상태 확인 중</div>
+      </div>
+      <div class="level-box">
+        <div class="level-row">
+          <span class="level-name" id="levelName">Lv.1 수험생</span>
+          <span class="xp-text" id="xpText">0 XP</span>
+        </div>
+        <div class="meter"><div id="xpFill"></div></div>
+        <div class="hint" id="nextXp" style="margin-top:8px">다음 레벨까지 100 XP</div>
+      </div>
+    </header>
+
+    <section class="grid">
+      <div>
+        <section class="panel timer">
+          <div class="panel-title">
+            <span>복습 타이머</span>
+            <span class="hint">시간 안에 오늘 복습을 끝내면 +15 XP</span>
+          </div>
+          <div class="timer-row">
+            <button class="btn secondary small" data-timer="5">5분</button>
+            <button class="btn secondary small" data-timer="10">10분</button>
+            <button class="btn secondary small" data-timer="15">15분</button>
+            <button class="btn secondary small" data-timer="20">20분</button>
+            <input id="customMinutes" type="number" min="1" max="99" placeholder="직접 입력" style="width:120px">
+            <button class="btn small" id="customTimerBtn">시작</button>
+            <button class="btn secondary small" id="stopTimerBtn">중단</button>
+          </div>
+          <div class="clock ok" id="clock">00:00</div>
+          <div class="progress"><div id="timerBar"></div></div>
+          <div class="timer-note" id="timerNote">타이머를 켜고 복습을 시작하세요.</div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">
+            <span>오늘 할 일</span>
+            <span class="hint" id="todayCount">0개</span>
+          </div>
+          <div class="section">
+            <div class="section-title">밀린 복습</div>
+            <div class="list" id="overdueList"></div>
+          </div>
+          <div class="section">
+            <div class="section-title">오늘 복습</div>
+            <div class="list" id="dueList"></div>
+          </div>
+          <div class="section">
+            <div class="section-title">오늘 과제</div>
+            <div class="list" id="taskList"></div>
+          </div>
+        </section>
+      </div>
+
+      <aside>
+        <section class="panel">
+          <div class="panel-title">새 어휘 배치 <span class="hint">등록만으로는 XP 없음</span></div>
+          <form class="form two" id="vocabForm">
+            <label>과목
+              <select id="vocabSubject">
+                <option value="english">영어</option>
+                <option value="spanish">스페인어</option>
+              </select>
+            </label>
+            <label>배치 이름
+              <input id="vocabName" required placeholder="예: TEPS 숙어 12">
+            </label>
+            <button class="btn" type="submit">등록</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">임시 과제</div>
+          <form class="form task" id="taskForm">
+            <label>분야
+              <select id="taskSubject">
+                <option value="전공서적">전공서적</option>
+                <option value="서양사">서양사</option>
+                <option value="기타">기타</option>
+              </select>
+            </label>
+            <label>내용
+              <input id="taskName" required placeholder="예: 10쪽 읽고 발제 메모">
+            </label>
+            <label>난이도
+              <select id="taskDifficulty">
+                <option value="light">가벼움</option>
+                <option value="normal" selected>보통</option>
+                <option value="hard">어려움</option>
+                <option value="deep">깊게 파기</option>
+              </select>
+            </label>
+            <button class="btn" type="submit">추가</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">통계</div>
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-num" id="statXp">0</div>
+              <div class="stat-label">총 XP</div>
+            </div>
+            <div class="stat">
+              <div class="stat-num" id="statMastered">0</div>
+              <div class="stat-label">완전 암기</div>
+            </div>
+            <div class="stat">
+              <div class="stat-num" id="statStreak">0</div>
+              <div class="stat-label">연속 학습일</div>
+            </div>
+          </div>
+          <div class="section-title">최근 7일 XP</div>
+          <div class="bars" id="xpBars"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">어휘 배치</div>
+          <div class="list" id="batchList"></div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const SUPABASE_URL = "https://peblghbzugqajklsuoip.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_J8n4rbxSZAG755BMSnPrlQ_4LgqhwpC";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function initApp() {
+      if (window.studyLoopReady) return;
+      window.studyLoopReady = true;
+      const KEY = 'study-loop-v1';
+      const INTERVALS = [1, 3, 7, 14];
+      const LEVELS = [
+        ['수험생', 0],
+        ['탐구자', 100],
+        ['독서가', 250],
+        ['분석가', 450],
+        ['연구자', 700],
+        ['학자', 1000],
+        ['석학', 1400],
+        ['교수', 1850],
+        ['권위자', 2400],
+        ['대가', 3000],
+      ];
+      const XP = {
+        initialStudy: 10,
+        review: { 1: 5, 3: 8, 7: 10, 14: 15 },
+        taskBase: { light: 15, normal: 30, hard: 45, deep: 65 },
+        taskPerfectBonus: { light: 5, normal: 10, hard: 15, deep: 20 },
+        timerBonus: 15,
+      };
+
+      const $ = id => document.getElementById(id);
+      let toastTimer = null;
+      let timerId = null;
+      let timer = { state: 'idle', total: 0, remaining: 0, bonus: false };
+      let state = freshData();
+      let persistTimer = null;
+
+      function freshData() {
+        return { xp: 0, streak: 0, lastActive: null, xpLog: [], batches: [], tasks: [] };
+      }
+
+      function localData() {
+        try {
+          const raw = localStorage.getItem(KEY);
+          if (!raw) return freshData();
+          return normalize({ ...freshData(), ...JSON.parse(raw) });
+        } catch {
+          return freshData();
+        }
+      }
+
+      function load() {
+        return normalize(JSON.parse(JSON.stringify(state)));
+      }
+
+      function normalize(data) {
+        data.batches = data.batches.map(batch => ({
+          ...batch,
+          registeredAt: batch.registeredAt || batch.created || today(),
+          learnedAt: batch.learnedAt || batch.learned || null,
+          done: Array.isArray(batch.done) ? batch.done : [],
+        }));
+        data.tasks = data.tasks.map(task => ({
+          ...task,
+          difficulty: task.difficulty || 'normal',
+          completion: Number(task.completion) || 0,
+          xpAwarded: Number(task.xpAwarded) || 0,
+          done: Boolean(task.done),
+        }));
+        return data;
+      }
+
+      async function persistNow() {
+        $('syncStatus').textContent = '클라우드 저장 중...';
+        const { error } = await supabase
+          .from('study_public_state')
+          .update({
+            data: state,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', 'default');
+        if (error) {
+          console.error(error);
+          $('syncStatus').textContent = `클라우드 저장 실패: ${error.message}`;
+          toast('클라우드 저장 실패. 화면의 동기화 상태를 확인하세요.');
+          return false;
+        }
+        $('syncStatus').textContent = `클라우드 저장 완료 · ${new Date().toLocaleTimeString('ko-KR')}`;
+        return true;
+      }
+
+      function save(data) {
+        state = normalize(data);
+        localStorage.setItem(KEY, JSON.stringify(data));
+        clearTimeout(persistTimer);
+        persistTimer = setTimeout(persistNow, 250);
+      }
+
+      async function loadCloudState() {
+        const { data, error } = await supabase
+          .from('study_public_state')
+          .select('data')
+          .eq('id', 'default')
+          .maybeSingle();
+
+        if (error) {
+          console.error(error);
+          $('appStatus').textContent = '클라우드 연결 실패';
+          $('syncStatus').textContent = `클라우드 불러오기 실패: ${error.message}`;
+          toast('Supabase SQL 설정을 먼저 실행해야 합니다.');
+          return false;
+        }
+
+        if (data && data.data) {
+          state = normalize({ ...freshData(), ...data.data });
+        } else {
+          state = localData();
+          await persistNow();
+        }
+
+        localStorage.setItem(KEY, JSON.stringify(state));
+        $('syncStatus').textContent = data && data.updated_at
+          ? `클라우드 불러옴 · ${new Date(data.updated_at).toLocaleString('ko-KR')}`
+          : '클라우드 초기화 완료';
+        return true;
+      }
+
+      function pad(n) {
+        return String(n).padStart(2, '0');
+      }
+
+      function today() {
+        const d = new Date();
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      }
+
+      function addDays(date, days) {
+        const d = new Date(date + 'T00:00:00');
+        d.setDate(d.getDate() + days);
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      }
+
+      function dayDiff(a, b) {
+        return Math.floor((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+      }
+
+      function fmtDate(date) {
+        const d = new Date(date + 'T00:00:00');
+        return `${d.getMonth() + 1}/${d.getDate()}`;
+      }
+
+      function uid() {
+        return Date.now().toString(36) + Math.random().toString(36).slice(2);
+      }
+
+      function esc(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function toast(message) {
+        $('toast').textContent = message;
+        $('toast').classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2200);
+      }
+
+      function levelIndex(xp) {
+        let idx = 0;
+        for (let i = 0; i < LEVELS.length; i += 1) {
+          if (xp >= LEVELS[i][1]) idx = i;
+        }
+        return idx;
+      }
+
+      function touchStreak(data) {
+        const t = today();
+        if (data.lastActive === t) return;
+        data.streak = data.lastActive === addDays(t, -1) ? data.streak + 1 : 1;
+        data.lastActive = t;
+      }
+
+      function addXp(data, amount) {
+        const before = levelIndex(data.xp);
+        data.xp += amount;
+        touchStreak(data);
+        const t = today();
+        const entry = data.xpLog.find(x => x.date === t);
+        if (entry) entry.xp += amount;
+        else data.xpLog.push({ date: t, xp: amount });
+        data.xpLog = data.xpLog.slice(-60);
+        const after = levelIndex(data.xp);
+        return after > before ? LEVELS[after][0] : null;
+      }
+
+      function pendingReviews(data) {
+        const t = today();
+        const overdue = [];
+        const due = [];
+        for (const batch of data.batches) {
+          if (!batch.learnedAt) continue;
+          const diff = dayDiff(batch.learnedAt, t);
+          for (const interval of INTERVALS) {
+            if (batch.done.includes(interval)) continue;
+            if (diff >= interval) {
+              const item = { batch, interval };
+              if (diff > interval) overdue.push(item);
+              else due.push(item);
+              break;
+            }
+          }
+        }
+        return { overdue, due };
+      }
+
+      function allReviewsDone(data) {
+        const pending = pendingReviews(data);
+        return pending.overdue.length + pending.due.length === 0;
+      }
+
+      function subjectTag(subject) {
+        if (subject === 'spanish') return 'tag spanish';
+        if (subject === 'english') return 'tag';
+        return 'tag task';
+      }
+
+      function subjectLabel(subject) {
+        if (subject === 'english') return '영어';
+        if (subject === 'spanish') return '스페인어';
+        return subject;
+      }
+
+      function difficultyLabel(difficulty) {
+        return {
+          light: '가벼움',
+          normal: '보통',
+          hard: '어려움',
+          deep: '깊게 파기',
+        }[difficulty] || '보통';
+      }
+
+      function taskXp(difficulty, completion) {
+        const pct = Math.max(0, Math.min(100, Number(completion) || 0));
+        const base = XP.taskBase[difficulty] || XP.taskBase.normal;
+        const bonus = pct === 100 ? (XP.taskPerfectBonus[difficulty] || XP.taskPerfectBonus.normal) : 0;
+        return Math.round(base * pct / 100) + bonus;
+      }
+
+      function dots(done) {
+        return INTERVALS.map((interval, index) => {
+          let cls = 'dot';
+          if (done.includes(interval)) cls += ' done';
+          else if (index === done.length) cls += ' next';
+          return `<span class="${cls}" title="+${interval}일"></span>`;
+        }).join('');
+      }
+
+      function reviewHtml(item, isOverdue) {
+        const b = item.batch;
+        const label = isOverdue ? `+${item.interval}일 복습 밀림` : `+${item.interval}일 복습`;
+        return `
+          <div class="item${isOverdue ? ' overdue' : ''}">
+            <span class="${subjectTag(b.subject)}">${subjectLabel(b.subject)}</span>
+            <div class="item-main">
+              <div class="item-title">${esc(b.name)}</div>
+              <div class="item-sub">${fmtDate(b.learnedAt)} 학습 · ${label}</div>
+            </div>
+            <button class="btn good small" data-complete-review="${b.id}" data-interval="${item.interval}">완료</button>
+          </div>`;
+      }
+
+      function taskHtml(task) {
+        return `
+          <div class="item">
+            <span class="tag task">${esc(task.subject)}</span>
+            <div class="item-main">
+              <div class="item-title">${esc(task.name)}</div>
+              <div class="item-sub">난이도 ${difficultyLabel(task.difficulty)} · 100% 완료 시 +${taskXp(task.difficulty, 100)} XP</div>
+            </div>
+            <div class="report-row">
+              <input type="number" min="0" max="100" value="${task.completion || 0}" data-task-percent="${task.id}" aria-label="성취도">
+              <button class="btn good small" data-report-task="${task.id}">성취도 기록</button>
+            </div>
+          </div>`;
+      }
+
+      function batchHtml(batch) {
+        const mastered = batch.done.length === INTERVALS.length;
+        if (!batch.learnedAt) {
+          return `
+            <div class="item">
+              <span class="${subjectTag(batch.subject)}">${subjectLabel(batch.subject)}</span>
+              <div class="item-main">
+                <div class="item-title">${esc(batch.name)}</div>
+                <div class="item-sub">${fmtDate(batch.registeredAt)} 등록 · 아직 학습 전</div>
+                <div class="dots">${dots([])}</div>
+              </div>
+              <div class="report-row">
+                <button class="btn good small" data-learn-batch="${batch.id}">학습 완료</button>
+                <button class="btn bad small" data-delete-batch="${batch.id}">삭제</button>
+              </div>
+            </div>`;
+        }
+        const diff = dayDiff(batch.learnedAt, today());
+        const next = INTERVALS.find(x => !batch.done.includes(x));
+        let status = '완전 암기';
+        if (!mastered) {
+          const left = next - diff;
+          status = left <= 0 ? `+${next}일 복습 대기` : `+${next}일 복습까지 ${left}일`;
+        }
+        return `
+          <div class="item">
+            <span class="${subjectTag(batch.subject)}">${subjectLabel(batch.subject)}</span>
+            <div class="item-main">
+              <div class="item-title">${esc(batch.name)}</div>
+              <div class="item-sub">${fmtDate(batch.learnedAt)} 학습 · ${status}</div>
+              <div class="dots">${dots(batch.done)}</div>
+            </div>
+            <button class="btn bad small" data-delete-batch="${batch.id}">삭제</button>
+          </div>`;
+      }
+
+      function renderTimer() {
+        const clock = $('clock');
+        const bar = $('timerBar');
+        const note = $('timerNote');
+        if (timer.state === 'idle') {
+          clock.textContent = '00:00';
+          clock.className = 'clock ok';
+          bar.style.width = '0';
+          bar.style.background = 'var(--good)';
+          note.textContent = '타이머를 켜고 복습을 시작하세요.';
+          return;
+        }
+
+        const ratio = timer.total ? timer.remaining / timer.total : 0;
+        const mm = Math.floor(timer.remaining / 60);
+        const ss = timer.remaining % 60;
+        clock.textContent = `${pad(mm)}:${pad(ss)}`;
+        bar.style.width = `${Math.round(ratio * 100)}%`;
+        if (timer.state === 'success') {
+          clock.className = 'clock ok';
+          bar.style.background = 'var(--good)';
+          note.textContent = '목표 달성. 보너스 XP가 지급됐습니다.';
+        } else if (timer.state === 'expired') {
+          clock.className = 'clock bad';
+          bar.style.background = 'var(--bad)';
+          note.textContent = '시간 초과. 복습 완료 XP는 그대로 받을 수 있습니다.';
+        } else if (ratio > .5) {
+          clock.className = 'clock ok';
+          bar.style.background = 'var(--good)';
+          note.textContent = '좋은 페이스입니다.';
+        } else if (ratio > .2) {
+          clock.className = 'clock warn';
+          bar.style.background = 'var(--warn)';
+          note.textContent = '슬슬 촉박합니다.';
+        } else {
+          clock.className = 'clock bad';
+          bar.style.background = 'var(--bad)';
+          note.textContent = '마감 모드.';
+        }
+      }
+
+      function render() {
+        const data = load();
+        const level = levelIndex(data.xp);
+        const current = LEVELS[level];
+        const next = LEVELS[level + 1];
+        const progress = next ? Math.round(((data.xp - current[1]) / (next[1] - current[1])) * 100) : 100;
+        $('levelName').textContent = `Lv.${level + 1} ${current[0]}`;
+        $('xpText').textContent = `${data.xp} XP`;
+        $('xpFill').style.width = `${progress}%`;
+        $('nextXp').textContent = next ? `다음 레벨까지 ${next[1] - data.xp} XP` : '최고 레벨 달성';
+
+        const pending = pendingReviews(data);
+        const tasks = data.tasks.filter(t => t.date === today() && !t.done);
+        $('todayCount').textContent = `${pending.overdue.length + pending.due.length + tasks.length}개`;
+        $('overdueList').innerHTML = pending.overdue.length
+          ? pending.overdue.map(x => reviewHtml(x, true)).join('')
+          : '<div class="empty">밀린 복습이 없습니다.</div>';
+        $('dueList').innerHTML = pending.due.length
+          ? pending.due.map(x => reviewHtml(x, false)).join('')
+          : '<div class="empty">오늘 예정된 복습이 없습니다.</div>';
+        $('taskList').innerHTML = tasks.length
+          ? tasks.map(taskHtml).join('')
+          : '<div class="empty">오늘 과제가 없습니다.</div>';
+
+        const sortedBatches = [...data.batches].sort((a, b) => {
+          const aDate = a.learnedAt || a.registeredAt;
+          const bDate = b.learnedAt || b.registeredAt;
+          return bDate.localeCompare(aDate);
+        });
+        $('batchList').innerHTML = sortedBatches.length
+          ? sortedBatches.map(batchHtml).join('')
+          : '<div class="empty">아직 등록된 어휘 배치가 없습니다.</div>';
+
+        $('statXp').textContent = data.xp;
+        $('statMastered').textContent = data.batches.filter(b => b.done.length === INTERVALS.length).length;
+        $('statStreak').textContent = data.streak;
+        renderBars(data);
+        renderTimer();
+      }
+
+      function renderBars(data) {
+        const t = today();
+        const days = Array.from({ length: 7 }, (_, i) => {
+          const date = addDays(t, i - 6);
+          const entry = data.xpLog.find(x => x.date === date);
+          const d = new Date(date + 'T00:00:00');
+          return { label: `${d.getMonth() + 1}/${d.getDate()}`, xp: entry ? entry.xp : 0 };
+        });
+        const max = Math.max(...days.map(d => d.xp), 1);
+        $('xpBars').innerHTML = days.map(day => `
+          <div class="bar-col">
+            <div>${day.xp || ''}</div>
+            <div class="bar" style="height:${Math.max(3, Math.round(day.xp / max * 78))}px"></div>
+            <div>${day.label}</div>
+          </div>`).join('');
+      }
+
+      function startTimer(minutes) {
+        const total = minutes * 60;
+        timer = { state: 'running', total, remaining: total, bonus: false };
+        clearInterval(timerId);
+        timerId = setInterval(() => {
+          if (timer.state !== 'running') return;
+          timer.remaining -= 1;
+          if (timer.remaining <= 0) {
+            timer.remaining = 0;
+            timer.state = 'expired';
+            clearInterval(timerId);
+          }
+          renderTimer();
+        }, 1000);
+        renderTimer();
+      }
+
+      function stopTimer() {
+        clearInterval(timerId);
+        timer = { state: 'idle', total: 0, remaining: 0, bonus: false };
+        renderTimer();
+      }
+
+      function checkTimerBonus() {
+        if (timer.state !== 'running' || timer.bonus) return;
+        const data = load();
+        if (!allReviewsDone(data)) return;
+        timer.bonus = true;
+        timer.state = 'success';
+        clearInterval(timerId);
+        const levelUp = addXp(data, XP.timerBonus);
+        save(data);
+        toast(levelUp ? `레벨 업: ${levelUp}` : `목표 달성 +${XP.timerBonus} XP`);
+        render();
+      }
+
+      $('vocabForm').addEventListener('submit', event => {
+        event.preventDefault();
+        const name = $('vocabName').value.trim();
+        if (!name) return;
+        const data = load();
+        data.batches.push({
+          id: uid(),
+          subject: $('vocabSubject').value,
+          name,
+          registeredAt: today(),
+          learnedAt: null,
+          done: [],
+        });
+        save(data);
+        $('vocabName').value = '';
+        toast('어휘 배치를 등록했습니다. 학습 완료 시 XP가 지급됩니다.');
+        render();
+      });
+
+      $('taskForm').addEventListener('submit', event => {
+        event.preventDefault();
+        const name = $('taskName').value.trim();
+        if (!name) return;
+        const data = load();
+        data.tasks.push({
+          id: uid(),
+          subject: $('taskSubject').value,
+          name,
+          difficulty: $('taskDifficulty').value,
+          completion: 0,
+          xpAwarded: 0,
+          date: today(),
+          done: false,
+        });
+        save(data);
+        $('taskName').value = '';
+        toast('과제를 추가했습니다.');
+        render();
+      });
+
+      document.body.addEventListener('click', event => {
+        const timerButton = event.target.closest('[data-timer]');
+        if (timerButton) {
+          startTimer(Number(timerButton.dataset.timer));
+          return;
+        }
+
+        const reviewButton = event.target.closest('[data-complete-review]');
+        if (reviewButton) {
+          const data = load();
+          const batch = data.batches.find(b => b.id === reviewButton.dataset.completeReview);
+          const interval = Number(reviewButton.dataset.interval);
+          if (batch && !batch.done.includes(interval)) {
+            batch.done.push(interval);
+            const levelUp = addXp(data, XP.review[interval]);
+            save(data);
+            toast(levelUp ? `레벨 업: ${levelUp}` : `복습 완료 +${XP.review[interval]} XP`);
+            render();
+            checkTimerBonus();
+          }
+          return;
+        }
+
+        const learnButton = event.target.closest('[data-learn-batch]');
+        if (learnButton) {
+          const data = load();
+          const batch = data.batches.find(b => b.id === learnButton.dataset.learnBatch);
+          if (batch && !batch.learnedAt) {
+            batch.learnedAt = today();
+            batch.done = [];
+            const levelUp = addXp(data, XP.initialStudy);
+            save(data);
+            toast(levelUp ? `레벨 업: ${levelUp}` : `학습 완료 +${XP.initialStudy} XP`);
+            render();
+          }
+          return;
+        }
+
+        const taskButton = event.target.closest('[data-report-task]');
+        if (taskButton) {
+          const data = load();
+          const task = data.tasks.find(t => t.id === taskButton.dataset.reportTask);
+          const input = document.querySelector(`[data-task-percent="${taskButton.dataset.reportTask}"]`);
+          const completion = Math.max(0, Math.min(100, Number(input && input.value) || 0));
+          if (task && !task.done) {
+            task.completion = completion;
+            task.done = true;
+            const amount = taskXp(task.difficulty, completion);
+            task.xpAwarded = amount;
+            const levelUp = amount > 0 ? addXp(data, amount) : null;
+            save(data);
+            if (amount > 0) toast(levelUp ? `레벨 업: ${levelUp}` : `성취도 ${completion}% · +${amount} XP`);
+            else toast(`성취도 ${completion}% 기록`);
+            render();
+          }
+          return;
+        }
+
+        const deleteButton = event.target.closest('[data-delete-batch]');
+        if (deleteButton) {
+          const data = load();
+          data.batches = data.batches.filter(b => b.id !== deleteButton.dataset.deleteBatch);
+          save(data);
+          toast('배치를 삭제했습니다.');
+          render();
+        }
+      });
+
+      $('customTimerBtn').addEventListener('click', () => {
+        const minutes = Number($('customMinutes').value);
+        if (!minutes || minutes < 1 || minutes > 99) {
+          toast('1~99분 사이로 입력하세요.');
+          return;
+        }
+        startTimer(minutes);
+      });
+
+      $('stopTimerBtn').addEventListener('click', stopTimer);
+
+      const ok = await loadCloudState();
+      render();
+      $('appStatus').textContent = ok ? '클라우드 동기화 중' : '로컬 임시 모드';
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+  </script>
+</body>
+</html>

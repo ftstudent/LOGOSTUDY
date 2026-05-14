@@ -187,6 +187,13 @@
 
     .form.two, .form.task { grid-template-columns: 1fr; align-items: stretch; }
 
+    .inline-field {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: end;
+    }
+
     label {
       display: grid;
       gap: 6px;
@@ -717,10 +724,13 @@
           <form class="form task" id="taskForm">
             <label>분야
               <select id="taskSubject">
-                <option value="전공서적">전공서적</option>
-                <option value="서양사">서양사</option>
-                <option value="기타">기타</option>
               </select>
+            </label>
+            <label>새 분야
+              <span class="inline-field">
+                <input id="newTaskSubject" placeholder="예: 영어, 스페인어, 논술">
+                <button class="btn secondary small" id="addTaskSubjectBtn" type="button">추가</button>
+              </span>
             </label>
             <label>내용
               <input id="taskName" required placeholder="예: 10쪽 읽고 발제 메모">
@@ -805,6 +815,7 @@
         taskPerfectBonus: { light: 5, normal: 10, hard: 15, deep: 20 },
         timerBonus: 7,
       };
+      const DEFAULT_TASK_SUBJECTS = ['전공서적', '서양사', '영어', '스페인어', '기타'];
 
       const $ = id => document.getElementById(id);
       let toastTimer = null;
@@ -815,7 +826,7 @@
       let renderedStudyDay = null;
 
       function freshData() {
-        return { xp: 0, streak: 0, lastActive: null, xpLog: [], batches: [], tasks: [] };
+        return { xp: 0, streak: 0, lastActive: null, xpLog: [], batches: [], tasks: [], taskSubjects: [...DEFAULT_TASK_SUBJECTS] };
       }
 
       function localData() {
@@ -833,6 +844,7 @@
       }
 
       function normalize(data) {
+        const taskSubjects = Array.isArray(data.taskSubjects) ? data.taskSubjects : DEFAULT_TASK_SUBJECTS;
         data.batches = data.batches.map(batch => ({
           ...batch,
           registeredAt: batch.registeredAt || batch.created || today(),
@@ -846,6 +858,7 @@
           xpAwarded: Number(task.xpAwarded) || 0,
           done: Boolean(task.done),
         }));
+        data.taskSubjects = [...new Set([...DEFAULT_TASK_SUBJECTS, ...taskSubjects, ...data.tasks.map(task => task.subject)].filter(Boolean))];
         return data;
       }
 
@@ -1091,6 +1104,15 @@
         return Math.round(base * pct / 100) + bonus;
       }
 
+      function renderTaskSubjects(data) {
+        const select = $('taskSubject');
+        const selected = select.value;
+        select.innerHTML = data.taskSubjects
+          .map(subject => `<option value="${esc(subject)}">${esc(subject)}</option>`)
+          .join('');
+        if (data.taskSubjects.includes(selected)) select.value = selected;
+      }
+
       function completedBeforeNextReview(nextReview) {
         const target = Number(nextReview);
         if (!INTERVALS.includes(target)) return [];
@@ -1215,6 +1237,7 @@
 
       function render() {
         const data = load();
+        renderTaskSubjects(data);
         renderedStudyDay = today();
         const level = levelIndex(data.xp);
         const current = LEVELS[level];
@@ -1354,6 +1377,18 @@
         $('taskName').value = '';
         toast('과제를 추가했습니다.');
         render();
+      });
+
+      $('addTaskSubjectBtn').addEventListener('click', () => {
+        const subject = $('newTaskSubject').value.trim();
+        if (!subject) return;
+        const data = load();
+        if (!data.taskSubjects.includes(subject)) data.taskSubjects.push(subject);
+        save(data);
+        $('newTaskSubject').value = '';
+        render();
+        $('taskSubject').value = subject;
+        toast(`분야를 추가했습니다: ${subject}`);
       });
 
       document.body.addEventListener('click', event => {

@@ -836,7 +836,7 @@
           ...batch,
           registeredAt: batch.registeredAt || batch.created || today(),
           learnedAt: batch.learnedAt || batch.learned || null,
-          done: Array.isArray(batch.done) ? batch.done : [],
+          done: Array.isArray(batch.done) ? batch.done.map(Number).filter(interval => INTERVALS.includes(interval)) : [],
         }));
         data.tasks = data.tasks.map(task => ({
           ...task,
@@ -1295,17 +1295,14 @@
         renderTimer();
       }
 
-      function checkTimerBonus() {
-        if (timer.state !== 'running' || timer.bonus) return;
-        const data = load();
-        if (!allReviewsDone(data)) return;
+      function awardTimerBonus(data) {
+        if (timer.state !== 'running' || timer.bonus) return { awarded: false, levelUp: null };
+        if (!allReviewsDone(data)) return { awarded: false, levelUp: null };
         timer.bonus = true;
         timer.state = 'success';
         clearInterval(timerId);
         const levelUp = addXp(data, XP.timerBonus);
-        save(data);
-        toast(levelUp ? `레벨 업: ${levelUp}` : `목표 달성 +${XP.timerBonus} XP`);
-        render();
+        return { awarded: true, levelUp };
       }
 
       $('vocabForm').addEventListener('submit', event => {
@@ -1398,10 +1395,11 @@
           if (batch && !batch.done.includes(interval)) {
             batch.done.push(interval);
             const levelUp = addXp(data, XP.review[interval]);
+            const bonus = awardTimerBonus(data);
             save(data);
-            toast(levelUp ? `레벨 업: ${levelUp}` : `복습 완료 +${XP.review[interval]} XP`);
+            const earned = `복습 완료 +${XP.review[interval]} XP${bonus.awarded ? ` · 목표 달성 +${XP.timerBonus} XP` : ''}`;
+            toast(levelUp || bonus.levelUp ? `레벨 업: ${bonus.levelUp || levelUp}` : earned);
             render();
-            checkTimerBonus();
           }
           return;
         }

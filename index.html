@@ -50,11 +50,9 @@
     }
 
     .top {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 18px;
-      align-items: start;
-      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 14px;
     }
 
     .brand {
@@ -129,12 +127,12 @@
     }
 
     .level-box {
-      min-width: 250px;
       padding: 16px;
       background: linear-gradient(135deg, rgba(246,198,107,.16), rgba(124,140,255,.12)), var(--panel);
       border: 1px solid var(--line);
       border-radius: 18px;
-      box-shadow: var(--shadow);
+      box-shadow: 0 14px 36px rgba(0,0,0,.22);
+      margin-bottom: 18px;
     }
 
     .level-row {
@@ -205,6 +203,144 @@
     }
 
     .pen-next { color: #f2c977; }
+
+    .crystal-panel {
+      overflow: hidden;
+    }
+
+    .crystal-toggle {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 48px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .crystal-toggle img {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: #11141d;
+    }
+
+    .crystal-title {
+      display: block;
+      color: #aeb5c5;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .crystal-count {
+      display: block;
+      margin-top: 3px;
+      color: var(--text);
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .crystal-chevron {
+      color: #b7bdcb;
+      font-size: 16px;
+      transition: transform .2s;
+    }
+
+    .crystal-panel.open .crystal-chevron {
+      transform: rotate(180deg);
+    }
+
+    .crystal-detail {
+      display: none;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .crystal-panel.open .crystal-detail {
+      display: block;
+    }
+
+    .crystal-ledger {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .ledger-card {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: rgba(255,255,255,.045);
+    }
+
+    .ledger-card strong {
+      display: block;
+      color: var(--accent2);
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .ledger-card.spent strong {
+      color: #ff8aa8;
+    }
+
+    .ledger-card span {
+      display: block;
+      margin-top: 6px;
+      color: #aeb5c5;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .reward-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .reward-item {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.04);
+    }
+
+    .reward-item img {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: #11141d;
+    }
+
+    .reward-name {
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .reward-meta {
+      margin-top: 3px;
+      color: #aeb5c5;
+      font-size: 12px;
+    }
+
+    .ticket-count {
+      color: var(--xp);
+      font-weight: 900;
+    }
 
     .meter, .progress {
       height: 9px;
@@ -407,6 +543,12 @@
     .btn.small { padding: 8px 10px; font-size: 12px; }
     .btn:hover { filter: brightness(1.06); }
     .btn:active { transform: translateY(1px); }
+    .btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      filter: none;
+      transform: none;
+    }
 
     .timer {
       display: grid;
@@ -418,7 +560,7 @@
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
 
     .daily-card {
@@ -706,26 +848,6 @@
           </h1>
         </button>
       </div>
-      <div class="level-box">
-        <div class="level-row">
-          <span class="level-name" id="levelName">Lv.1 수험생</span>
-          <span class="xp-text" id="xpText">0 XP</span>
-        </div>
-        <div class="meter"><div id="xpFill"></div></div>
-        <div class="level-total">
-          <span id="levelRange">0 / 100 XP</span>
-          <span id="nextXp">다음 레벨까지 100 XP</span>
-        </div>
-        <div class="pen-current" aria-label="현재 레벨 펜">
-          <img id="penImage" src="assets/pens/pen-lv01-05.png" alt="견습자의 흑펜">
-          <div class="pen-copy">
-            <span class="pen-label">현재 펜</span>
-            <strong class="pen-name" id="penName">견습자의 흑펜</strong>
-            <span class="pen-range" id="penRange">Lv.1-5</span>
-            <span class="pen-next" id="penNext">다음 펜까지 5레벨</span>
-          </div>
-        </div>
-      </div>
     </header>
 
     <section class="grid">
@@ -807,6 +929,54 @@
       </div>
 
       <aside>
+        <section class="level-box">
+          <div class="level-row">
+            <span class="level-name" id="levelName">Lv.1 수험생</span>
+            <span class="xp-text" id="xpText">0 XP</span>
+          </div>
+          <div class="meter"><div id="xpFill"></div></div>
+          <div class="level-total">
+            <span id="levelRange">0 / 100 XP</span>
+            <span id="nextXp">다음 레벨까지 100 XP</span>
+          </div>
+          <div class="pen-current" aria-label="현재 레벨 펜">
+            <img id="penImage" src="assets/pens/pen-lv01-05.png" alt="견습자의 흑펜">
+            <div class="pen-copy">
+              <span class="pen-label">현재 펜</span>
+              <strong class="pen-name" id="penName">견습자의 흑펜</strong>
+              <span class="pen-range" id="penRange">Lv.1-5</span>
+              <span class="pen-next" id="penNext">다음 펜까지 5레벨</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel crystal-panel" id="crystalPanel">
+          <button class="crystal-toggle" id="crystalToggle" type="button" aria-expanded="false">
+            <img src="assets/rewards/crystal.png" alt="크리스탈">
+            <span>
+              <span class="crystal-title">크리스탈</span>
+              <strong class="crystal-count"><span id="crystalCount">0</span>개</strong>
+            </span>
+            <span class="crystal-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="crystal-detail">
+            <div class="crystal-ledger">
+              <div class="ledger-card">
+                <strong id="crystalEarnedToday">+0</strong>
+                <span>오늘 획득</span>
+              </div>
+              <div class="ledger-card spent">
+                <strong id="crystalSpentToday">-0</strong>
+                <span>오늘 사용</span>
+              </div>
+            </div>
+            <div class="section-title">도파민 상점</div>
+            <div class="reward-list" id="rewardShop"></div>
+            <div class="section-title">보유 사용권</div>
+            <div class="reward-list" id="ticketList"></div>
+          </div>
+        </section>
+
         <section class="panel">
           <div class="panel-title">새 어휘 배치</div>
           <form class="form two" id="vocabForm">
@@ -956,6 +1126,18 @@
         taskMax: { light: 20, normal: 40, hard: 60, deep: 85 },
         timerBonus: 5,
       };
+      const CRYSTAL = {
+        initialStudy: 1,
+        review: 1,
+        taskBase: { light: 1, normal: 2, hard: 3, deep: 4 },
+      };
+      const REWARDS = [
+        { id: 'youtube', name: '유튜브 20분', price: 5, image: 'assets/rewards/youtube-pass.png' },
+        { id: 'anime', name: '애니메이션 1화', price: 5, image: 'assets/rewards/anime-pass.png' },
+        { id: 'sns', name: 'SNS 20분', price: 5, image: 'assets/rewards/sns-pass.png' },
+        { id: 'webtoon', name: '웹툰 3화', price: 6, image: 'assets/rewards/webtoon-pass.png' },
+        { id: 'free', name: '자유도파민 30분', price: 10, image: 'assets/rewards/free-pass.png' },
+      ];
       const DEFAULT_TASK_SUBJECTS = ['전공서적', '서양사', '영어', '스페인어', '기타'];
 
       const $ = id => document.getElementById(id);
@@ -967,7 +1149,18 @@
       let renderedStudyDay = null;
 
       function freshData() {
-        return { xp: 0, streak: 0, lastActive: null, xpLog: [], batches: [], tasks: [], taskSubjects: [...DEFAULT_TASK_SUBJECTS] };
+        return {
+          xp: 0,
+          crystals: 0,
+          streak: 0,
+          lastActive: null,
+          xpLog: [],
+          crystalLog: [],
+          tickets: {},
+          batches: [],
+          tasks: [],
+          taskSubjects: [...DEFAULT_TASK_SUBJECTS],
+        };
       }
 
       function localData() {
@@ -985,6 +1178,16 @@
       }
 
       function normalize(data) {
+        data.crystals = Math.max(0, Math.floor(Number(data.crystals) || 0));
+        data.crystalLog = Array.isArray(data.crystalLog) ? data.crystalLog.map(entry => ({
+          date: entry.date || today(),
+          earned: Math.max(0, Math.floor(Number(entry.earned) || 0)),
+          spent: Math.max(0, Math.floor(Number(entry.spent) || 0)),
+        })) : [];
+        data.tickets = data.tickets && typeof data.tickets === 'object' && !Array.isArray(data.tickets) ? data.tickets : {};
+        for (const reward of REWARDS) {
+          data.tickets[reward.id] = Math.max(0, Math.floor(Number(data.tickets[reward.id]) || 0));
+        }
         const taskSubjects = Array.isArray(data.taskSubjects) ? data.taskSubjects : DEFAULT_TASK_SUBJECTS;
         data.batches = data.batches.map(batch => ({
           ...batch,
@@ -998,6 +1201,7 @@
           difficulty: task.difficulty || 'normal',
           completion: Number(task.completion) || 0,
           xpAwarded: Number(task.xpAwarded) || 0,
+          crystalsAwarded: Number(task.crystalsAwarded) || 0,
           done: Boolean(task.done),
         }));
         data.taskSubjects = [...new Set([...DEFAULT_TASK_SUBJECTS, ...taskSubjects, ...data.tasks.map(task => task.subject)].filter(Boolean))];
@@ -1183,9 +1387,43 @@
         return after > before ? LEVELS[after][0] : null;
       }
 
+      function crystalEntry(data, date) {
+        let entry = data.crystalLog.find(x => x.date === date);
+        if (!entry) {
+          entry = { date, earned: 0, spent: 0 };
+          data.crystalLog.push(entry);
+        }
+        return entry;
+      }
+
+      function addCrystals(data, amount) {
+        const value = Math.max(0, Math.floor(Number(amount) || 0));
+        if (!value) return 0;
+        data.crystals += value;
+        const entry = crystalEntry(data, today());
+        entry.earned += value;
+        data.crystalLog = data.crystalLog.slice(-60);
+        return value;
+      }
+
+      function spendCrystals(data, amount) {
+        const value = Math.max(0, Math.floor(Number(amount) || 0));
+        if (!value || data.crystals < value) return false;
+        data.crystals -= value;
+        const entry = crystalEntry(data, today());
+        entry.spent += value;
+        data.crystalLog = data.crystalLog.slice(-60);
+        return true;
+      }
+
       function xpOn(data, date) {
         const entry = data.xpLog.find(x => x.date === date);
         return entry ? entry.xp : 0;
+      }
+
+      function crystalsOn(data, date) {
+        const entry = data.crystalLog.find(x => x.date === date);
+        return entry ? entry : { date, earned: 0, spent: 0 };
       }
 
       function recentXpDays(data) {
@@ -1255,6 +1493,14 @@
         return Math.round(proportionalBase * pct / 100) + (pct === 100 ? perfectBonus : 0);
       }
 
+      function taskCrystals(difficulty, completion) {
+        const pct = Math.max(0, Math.min(100, Number(completion) || 0));
+        const base = CRYSTAL.taskBase[difficulty] || CRYSTAL.taskBase.normal;
+        if (pct >= 75) return base;
+        if (pct >= 50) return Math.floor(base / 2);
+        return 0;
+      }
+
       function renderTaskSubjects(data) {
         const select = $('taskSubject');
         const selected = select.value;
@@ -1299,7 +1545,7 @@
             <span class="tag task">${esc(task.subject)}</span>
             <div class="item-main">
               <div class="item-title">${esc(task.name)}</div>
-              <div class="item-sub">난이도 ${difficultyLabel(task.difficulty)} · 100% 완료 시 +${taskXp(task.difficulty, 100)} XP</div>
+              <div class="item-sub">난이도 ${difficultyLabel(task.difficulty)} · 100% 완료 시 +${taskXp(task.difficulty, 100)} XP · +${taskCrystals(task.difficulty, 100)} 크리스탈</div>
             </div>
             <div class="report-row">
               <div class="completion-control">
@@ -1309,6 +1555,31 @@
               <button class="btn good small" data-report-task="${task.id}">성취도 기록</button>
               <button class="btn bad small" data-delete-task="${task.id}">삭제</button>
             </div>
+          </div>`;
+      }
+
+      function rewardShopHtml(reward, data) {
+        const disabled = data.crystals < reward.price ? 'disabled' : '';
+        return `
+          <div class="reward-item">
+            <img src="${reward.image}" alt="${esc(reward.name)}">
+            <div>
+              <div class="reward-name">${esc(reward.name)}</div>
+              <div class="reward-meta">${reward.price} 크리스탈 · 보유 <span class="ticket-count">${data.tickets[reward.id] || 0}</span></div>
+            </div>
+            <button class="btn small" data-buy-reward="${reward.id}" ${disabled}>구매</button>
+          </div>`;
+      }
+
+      function ticketHtml(reward, count) {
+        return `
+          <div class="reward-item">
+            <img src="${reward.image}" alt="${esc(reward.name)}">
+            <div>
+              <div class="reward-name">${esc(reward.name)}</div>
+              <div class="reward-meta">사용권 <span class="ticket-count">${count}</span>장</div>
+            </div>
+            <button class="btn secondary small" data-use-ticket="${reward.id}">사용</button>
           </div>`;
       }
 
@@ -1413,12 +1684,21 @@
         const tasks = data.tasks.filter(t => t.date === today() && !t.done);
         const todoCount = pending.overdue.length + pending.due.length + tasks.length;
         const todayXp = xpOn(data, today());
+        const todayCrystals = crystalsOn(data, today());
         const recentDays = recentXpDays(data);
         const avgXp = Math.round(recentDays.reduce((sum, day) => sum + day.xp, 0) / recentDays.length);
         $('todayCount').textContent = `${todoCount}개`;
         $('todayXpCard').textContent = `+${todayXp}`;
         $('todayTodoCard').textContent = todoCount;
         $('streakCard').textContent = data.streak;
+        $('crystalCount').textContent = data.crystals;
+        $('crystalEarnedToday').textContent = `+${todayCrystals.earned}`;
+        $('crystalSpentToday').textContent = `-${todayCrystals.spent}`;
+        $('rewardShop').innerHTML = REWARDS.map(reward => rewardShopHtml(reward, data)).join('');
+        const tickets = REWARDS.filter(reward => data.tickets[reward.id] > 0);
+        $('ticketList').innerHTML = tickets.length
+          ? tickets.map(reward => ticketHtml(reward, data.tickets[reward.id])).join('')
+          : '<div class="empty">보유한 사용권이 없습니다.</div>';
         $('shiftSummary').textContent = activeBatches.length
           ? `진행 중인 어휘 배치 ${activeBatches.length}개에 적용됩니다.`
           : '진행 중인 어휘 배치가 없습니다.';
@@ -1568,6 +1848,45 @@
           return;
         }
 
+        if (event.target.closest('#crystalToggle')) {
+          const panel = $('crystalPanel');
+          panel.classList.toggle('open');
+          $('crystalToggle').setAttribute('aria-expanded', panel.classList.contains('open') ? 'true' : 'false');
+          return;
+        }
+
+        const buyButton = event.target.closest('[data-buy-reward]');
+        if (buyButton) {
+          const reward = REWARDS.find(item => item.id === buyButton.dataset.buyReward);
+          if (!reward) return;
+          const data = load();
+          if (!spendCrystals(data, reward.price)) {
+            toast('크리스탈이 부족합니다.');
+            return;
+          }
+          data.tickets[reward.id] = (data.tickets[reward.id] || 0) + 1;
+          save(data);
+          toast(`${reward.name} 사용권을 구매했습니다.`);
+          render();
+          return;
+        }
+
+        const useTicketButton = event.target.closest('[data-use-ticket]');
+        if (useTicketButton) {
+          const reward = REWARDS.find(item => item.id === useTicketButton.dataset.useTicket);
+          if (!reward) return;
+          const data = load();
+          if (!data.tickets[reward.id]) {
+            toast('사용할 사용권이 없습니다.');
+            return;
+          }
+          data.tickets[reward.id] -= 1;
+          save(data);
+          toast(`${reward.name} 사용권을 사용했습니다.`);
+          render();
+          return;
+        }
+
         if (event.target.closest('[data-calendar-prev]')) {
           calendarMonth.setMonth(calendarMonth.getMonth() - 1);
           renderCalendar();
@@ -1603,11 +1922,12 @@
           if (batch && !batch.done.includes(interval)) {
             batch.done.push(interval);
             const levelUp = addXp(data, XP.review[interval]);
+            const crystalAwarded = addCrystals(data, CRYSTAL.review);
             const bonusAwarded = window.confirm('시간 안에 끝냈나요?');
             const bonusLevelUp = bonusAwarded ? addXp(data, XP.timerBonus) : null;
             save(data);
-            const earned = `복습 완료 +${XP.review[interval]} XP${bonusAwarded ? ` · 시간 보너스 +${XP.timerBonus} XP` : ''}`;
-            toast(levelUp || bonusLevelUp ? `레벨 업: ${bonusLevelUp || levelUp}` : earned);
+            const earned = `복습 완료 +${XP.review[interval]} XP · +${crystalAwarded} 크리스탈${bonusAwarded ? ` · 시간 보너스 +${XP.timerBonus} XP` : ''}`;
+            toast(levelUp || bonusLevelUp ? `레벨 업: ${bonusLevelUp || levelUp} · +${crystalAwarded} 크리스탈` : earned);
             render();
           }
           return;
@@ -1621,8 +1941,9 @@
             batch.learnedAt = today();
             batch.done = [];
             const levelUp = addXp(data, XP.initialStudy);
+            const crystalAwarded = addCrystals(data, CRYSTAL.initialStudy);
             save(data);
-            toast(levelUp ? `레벨 업: ${levelUp}` : `학습 완료 +${XP.initialStudy} XP`);
+            toast(levelUp ? `레벨 업: ${levelUp} · +${crystalAwarded} 크리스탈` : `학습 완료 +${XP.initialStudy} XP · +${crystalAwarded} 크리스탈`);
             render();
           }
           return;
@@ -1638,10 +1959,14 @@
             task.completion = completion;
             task.done = true;
             const amount = taskXp(task.difficulty, completion);
+            const crystalAwarded = taskCrystals(task.difficulty, completion);
             task.xpAwarded = amount;
+            task.crystalsAwarded = crystalAwarded;
             const levelUp = amount > 0 ? addXp(data, amount) : null;
+            if (crystalAwarded > 0) addCrystals(data, crystalAwarded);
             save(data);
-            if (amount > 0) toast(levelUp ? `레벨 업: ${levelUp}` : `성취도 ${completion}% · +${amount} XP`);
+            if (levelUp) toast(`레벨 업: ${levelUp} · +${crystalAwarded} 크리스탈`);
+            else if (amount > 0 || crystalAwarded > 0) toast(`성취도 ${completion}% · +${amount} XP · +${crystalAwarded} 크리스탈`);
             else toast(`성취도 ${completion}% 기록`);
             render();
           }

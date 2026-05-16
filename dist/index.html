@@ -871,8 +871,7 @@
       const XP = {
         initialStudy: 10,
         review: { 1: 5, 3: 8, 7: 10, 14: 15 },
-        taskBase: { light: 15, normal: 30, hard: 45, deep: 65 },
-        taskPerfectBonus: { light: 5, normal: 10, hard: 15, deep: 20 },
+        taskMax: { light: 20, normal: 40, hard: 60, deep: 85 },
         timerBonus: 5,
       };
       const DEFAULT_TASK_SUBJECTS = ['전공서적', '서양사', '영어', '스페인어', '기타'];
@@ -1164,9 +1163,10 @@
 
       function taskXp(difficulty, completion) {
         const pct = Math.max(0, Math.min(100, Number(completion) || 0));
-        const base = XP.taskBase[difficulty] || XP.taskBase.normal;
-        const bonus = pct === 100 ? (XP.taskPerfectBonus[difficulty] || XP.taskPerfectBonus.normal) : 0;
-        return Math.round(base * pct / 100) + bonus;
+        const max = XP.taskMax[difficulty] || XP.taskMax.normal;
+        const perfectBonus = Math.round(max * 0.1);
+        const proportionalBase = max - perfectBonus;
+        return Math.round(proportionalBase * pct / 100) + (pct === 100 ? perfectBonus : 0);
       }
 
       function renderTaskSubjects(data) {

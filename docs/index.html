@@ -477,9 +477,26 @@
       flex-wrap: wrap;
     }
 
-    .report-row input {
-      width: 78px;
-      padding: 8px 9px;
+    .completion-control {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) 44px;
+      gap: 8px;
+      align-items: center;
+      min-width: 190px;
+    }
+
+    .completion-control input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent2);
+      cursor: pointer;
+    }
+
+    .completion-value {
+      color: var(--xp);
+      font-size: 12px;
+      font-weight: 900;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
     }
 
     .dots { display: flex; gap: 5px; margin-top: 8px; }
@@ -1187,7 +1204,10 @@
               <div class="item-sub">난이도 ${difficultyLabel(task.difficulty)} · 100% 완료 시 +${taskXp(task.difficulty, 100)} XP</div>
             </div>
             <div class="report-row">
-              <input type="number" min="0" max="100" value="${task.completion || 0}" data-task-percent="${task.id}" aria-label="성취도">
+              <div class="completion-control">
+                <input type="range" min="0" max="100" step="5" value="${task.completion || 0}" data-task-percent="${task.id}" aria-label="성취도">
+                <span class="completion-value" data-task-percent-value="${task.id}">${task.completion || 0}%</span>
+              </div>
               <button class="btn good small" data-report-task="${task.id}">성취도 기록</button>
               <button class="btn bad small" data-delete-task="${task.id}">삭제</button>
             </div>
@@ -1553,6 +1573,13 @@
           toast('과제를 삭제했습니다.');
           render();
         }
+      });
+
+      document.body.addEventListener('input', event => {
+        const slider = event.target.closest('[data-task-percent]');
+        if (!slider) return;
+        const value = document.querySelector(`[data-task-percent-value="${slider.dataset.taskPercent}"]`);
+        if (value) value.textContent = `${slider.value}%`;
       });
 
       $('customTimerBtn').addEventListener('click', () => {

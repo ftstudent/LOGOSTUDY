@@ -155,6 +155,57 @@
       color: #b7bdcb;
       font-size: 12px;
     }
+
+    .pen-current {
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-top: 13px;
+      padding-top: 13px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .pen-current img {
+      width: 58px;
+      height: 86px;
+      object-fit: cover;
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 12px;
+      background: #11141d;
+      box-shadow: 0 10px 24px rgba(0,0,0,.28);
+    }
+
+    .pen-copy { min-width: 0; }
+
+    .pen-label {
+      display: block;
+      color: #aab0bf;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .pen-name {
+      display: block;
+      margin-top: 4px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1.3;
+    }
+
+    .pen-range,
+    .pen-next {
+      display: block;
+      margin-top: 4px;
+      color: #b7bdcb;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .pen-next { color: #f2c977; }
+
     .meter, .progress {
       height: 9px;
       background: rgba(0,0,0,.28);
@@ -665,6 +716,15 @@
           <span id="levelRange">0 / 100 XP</span>
           <span id="nextXp">다음 레벨까지 100 XP</span>
         </div>
+        <div class="pen-current" aria-label="현재 레벨 펜">
+          <img id="penImage" src="assets/pens/pen-lv01-05.png" alt="견습자의 흑펜">
+          <div class="pen-copy">
+            <span class="pen-label">현재 펜</span>
+            <strong class="pen-name" id="penName">견습자의 흑펜</strong>
+            <span class="pen-range" id="penRange">Lv.1-5</span>
+            <span class="pen-next" id="penNext">다음 펜까지 5레벨</span>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -867,6 +927,28 @@
         ['교수', 1850],
         ['권위자', 2400],
         ['대가', 3000],
+        ['주석가', 3700],
+        ['해석가', 4500],
+        ['구조가', 5400],
+        ['논리가', 6400],
+        ['문헌가', 7500],
+        ['사유가', 8700],
+        ['개념가', 10000],
+        ['논증가', 11400],
+        ['정련가', 12900],
+        ['운영가', 14500],
+        ['지도사', 16200],
+        ['설계자', 18000],
+        ['탐색자', 19900],
+        ['종합가', 21900],
+        ['학습운영자', 24000],
+      ];
+      const PENS = [
+        { min: 1, max: 5, name: '견습자의 흑펜', src: 'assets/pens/pen-lv01-05.png' },
+        { min: 6, max: 10, name: '구문해부자의 펜', src: 'assets/pens/pen-lv06-10.png' },
+        { min: 11, max: 15, name: '주석가의 은펜', src: 'assets/pens/pen-lv11-15.png' },
+        { min: 16, max: 20, name: '논리해부자의 펜', src: 'assets/pens/pen-lv16-20.png' },
+        { min: 21, max: 25, name: '개념지도사의 펜', src: 'assets/pens/pen-lv21-25.png' },
       ];
       const XP = {
         initialStudy: 10,
@@ -1075,6 +1157,10 @@
           if (xp >= LEVELS[i][1]) idx = i;
         }
         return idx;
+      }
+
+      function penForLevel(levelNumber) {
+        return PENS.find(pen => levelNumber >= pen.min && levelNumber <= pen.max) || PENS[PENS.length - 1];
       }
 
       function touchStreak(data) {
@@ -1305,14 +1391,22 @@
         renderTaskSubjects(data);
         renderedStudyDay = today();
         const level = levelIndex(data.xp);
+        const levelNumber = level + 1;
         const current = LEVELS[level];
         const next = LEVELS[level + 1];
         const progress = next ? Math.round(((data.xp - current[1]) / (next[1] - current[1])) * 100) : 100;
-        $('levelName').textContent = `Lv.${level + 1} ${current[0]}`;
+        const pen = penForLevel(levelNumber);
+        $('levelName').textContent = `Lv.${levelNumber} ${current[0]}`;
         $('xpText').textContent = `${data.xp} XP`;
         $('xpFill').style.width = `${progress}%`;
         $('levelRange').textContent = next ? `${data.xp} / ${next[1]} XP` : `${data.xp} XP`;
         $('nextXp').textContent = next ? `다음 레벨까지 ${next[1] - data.xp} XP` : '최고 레벨 달성';
+        $('penImage').src = pen.src;
+        $('penImage').alt = pen.name;
+        $('penName').textContent = pen.name;
+        $('penRange').textContent = `Lv.${pen.min}-${pen.max}`;
+        $('penNext').textContent = levelNumber < pen.max ? `다음 펜까지 ${pen.max - levelNumber + 1}레벨` : '다음 레벨에서 새 펜';
+        if (levelNumber >= PENS[PENS.length - 1].max) $('penNext').textContent = '현재 최고 펜';
 
         const pending = pendingReviews(data);
         const activeBatches = activeReviewBatches(data);

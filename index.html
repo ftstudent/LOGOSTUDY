@@ -921,6 +921,10 @@
             <span class="hint" id="todayCount">0개</span>
           </div>
           <div class="section">
+            <div class="section-title">첫 학습</div>
+            <div class="list" id="learningList"></div>
+          </div>
+          <div class="section">
             <div class="section-title">밀린 복습</div>
             <div class="list" id="overdueList"></div>
           </div>
@@ -1205,6 +1209,7 @@
           ...batch,
           registeredAt: batch.registeredAt || batch.created || today(),
           learnedAt: batch.learnedAt || batch.learned || null,
+          plannedAt: batch.learnedAt || batch.learned ? null : (batch.plannedAt || batch.registeredAt || batch.created || today()),
           delayDays: Number(batch.delayDays) || 0,
           done: Array.isArray(batch.done) ? batch.done.map(Number).filter(interval => INTERVALS.includes(interval)) : [],
         }));
@@ -1467,6 +1472,13 @@
         return { overdue, due };
       }
 
+      function pendingLearning(data) {
+        const t = today();
+        return data.batches
+          .filter(batch => !batch.learnedAt && dayDiff(batch.plannedAt || batch.registeredAt, t) >= 0)
+          .sort((a, b) => (a.plannedAt || a.registeredAt).localeCompare(b.plannedAt || b.registeredAt));
+      }
+
       function activeReviewBatches(data) {
         return data.batches.filter(batch => batch.learnedAt && batch.done.length < INTERVALS.length);
       }
@@ -1551,6 +1563,22 @@
           </div>`;
       }
 
+      function learningHtml(batch) {
+        const plannedAt = batch.plannedAt || batch.registeredAt;
+        const diff = dayDiff(plannedAt, today());
+        const status = diff > 0 ? `${diff}일 지남 · 첫 학습 대기` : '오늘 첫 학습';
+        return `
+          <div class="item${diff > 0 ? ' overdue' : ''}">
+            <span class="${subjectTag(batch.subject)}">${subjectLabel(batch.subject)}</span>
+            <div class="item-main">
+              <div class="item-title">${esc(batch.name)}</div>
+              <div class="item-sub">${fmtDate(plannedAt)} 예정 · ${status}</div>
+              <div class="dots">${dots([])}</div>
+            </div>
+            <button class="btn good small" data-learn-batch="${batch.id}">학습 완료</button>
+          </div>`;
+      }
+
       function taskHtml(task) {
         return `
           <div class="item">
@@ -1598,12 +1626,13 @@
       function batchHtml(batch) {
         const mastered = batch.done.length === INTERVALS.length;
         if (!batch.learnedAt) {
+          const plannedAt = batch.plannedAt || batch.registeredAt;
           return `
             <div class="item">
               <span class="${subjectTag(batch.subject)}">${subjectLabel(batch.subject)}</span>
               <div class="item-main">
                 <div class="item-title">${esc(batch.name)}</div>
-                <div class="item-sub">${fmtDate(batch.registeredAt)} 등록 · 아직 학습 전</div>
+                <div class="item-sub">${fmtDate(plannedAt)} 첫 학습 예정 · 아직 학습 전</div>
                 <div class="dots">${dots([])}</div>
               </div>
               <div class="report-row">
@@ -1692,9 +1721,10 @@
         if (levelNumber >= PENS[PENS.length - 1].max) $('penNext').textContent = '현재 최고 펜';
 
         const pending = pendingReviews(data);
+        const learning = pendingLearning(data);
         const activeBatches = activeReviewBatches(data);
         const tasks = data.tasks.filter(t => t.date === today() && !t.done);
-        const todoCount = pending.overdue.length + pending.due.length + tasks.length;
+        const todoCount = learning.length + pending.overdue.length + pending.due.length + tasks.length;
         const todayXp = xpOn(data, today());
         const todayCrystals = crystalsOn(data, today());
         const recentDays = recentXpDays(data);
@@ -1714,6 +1744,9 @@
         $('shiftSummary').textContent = activeBatches.length
           ? `진행 중인 어휘 배치 ${activeBatches.length}개에 적용됩니다.`
           : '진행 중인 어휘 배치가 없습니다.';
+        $('learningList').innerHTML = learning.length
+          ? learning.map(learningHtml).join('')
+          : '<div class="empty">첫 학습 예정 배치가 없습니다.</div>';
         $('overdueList').innerHTML = pending.overdue.length
           ? pending.overdue.map(x => reviewHtml(x, true)).join('')
           : '<div class="empty">밀린 복습이 없습니다.</div>';
@@ -1725,8 +1758,8 @@
           : '<div class="empty">오늘 과제가 없습니다.</div>';
 
         const sortedBatches = [...data.batches].sort((a, b) => {
-          const aDate = a.learnedAt || a.registeredAt;
-          const bDate = b.learnedAt || b.registeredAt;
+          const aDate = a.learnedAt || a.plannedAt || a.registeredAt;
+          const bDate = b.learnedAt || b.plannedAt || b.registeredAt;
           return bDate.localeCompare(aDate);
         });
         $('batchList').innerHTML = sortedBatches.length
@@ -1781,17 +1814,20 @@
         const name = $('vocabName').value.trim();
         if (!name) return;
         const nextReview = $('vocabNextReview').value;
-        const learnedAt = $('vocabLearnedAt').value || null;
-        if (nextReview !== 'none' && !learnedAt) {
+        const scheduleDate = $('vocabLearnedAt').value || null;
+        if (nextReview !== 'none' && !scheduleDate) {
           toast('복습 회차를 지정하려면 학습일을 입력하세요.');
           return;
         }
+        const learnedAt = nextReview === 'none' ? null : scheduleDate;
+        const plannedAt = nextReview === 'none' ? (scheduleDate || today()) : null;
         const data = load();
         data.batches.push({
           id: uid(),
           subject: $('vocabSubject').value,
           name,
           registeredAt: today(),
+          plannedAt,
           learnedAt,
           done: completedBeforeNextReview(nextReview),
           delayDays: 0,
@@ -1800,7 +1836,7 @@
         $('vocabName').value = '';
         $('vocabLearnedAt').value = '';
         $('vocabNextReview').value = 'none';
-        toast(learnedAt ? `복습 상태를 반영해 등록했습니다.` : '어휘 배치를 등록했습니다. 학습 완료 시 XP가 지급됩니다.');
+        toast(learnedAt ? `복습 상태를 반영해 등록했습니다.` : '첫 학습 일정에 등록했습니다. 학습 완료 시 XP가 지급됩니다.');
         render();
       });
 
@@ -1951,6 +1987,7 @@
           const batch = data.batches.find(b => b.id === learnButton.dataset.learnBatch);
           if (batch && !batch.learnedAt) {
             batch.learnedAt = today();
+            batch.plannedAt = null;
             batch.done = [];
             const levelUp = addXp(data, XP.initialStudy);
             const crystalAwarded = addCrystals(data, CRYSTAL.initialStudy);

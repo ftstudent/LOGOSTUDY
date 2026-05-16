@@ -688,7 +688,7 @@
         <section class="panel timer">
           <div class="panel-title">
             <span>복습 타이머</span>
-            <span class="hint">시간 안에 오늘 복습을 끝내면 +7 XP</span>
+            <span class="hint">완료 시 시간 안에 끝냈다면 +5 XP</span>
           </div>
           <div class="timer-row">
             <button class="btn secondary small" data-timer="5">5분</button>
@@ -873,7 +873,7 @@
         review: { 1: 5, 3: 8, 7: 10, 14: 15 },
         taskBase: { light: 15, normal: 30, hard: 45, deep: 65 },
         taskPerfectBonus: { light: 5, normal: 10, hard: 15, deep: 20 },
-        timerBonus: 7,
+        timerBonus: 5,
       };
       const DEFAULT_TASK_SUBJECTS = ['전공서적', '서양사', '영어', '스페인어', '기타'];
 
@@ -1281,11 +1281,7 @@
         const ss = timer.remaining % 60;
         clock.textContent = `${pad(mm)}:${pad(ss)}`;
         bar.style.width = `${Math.round(ratio * 100)}%`;
-        if (timer.state === 'success') {
-          clock.className = 'clock ok';
-          bar.style.background = 'var(--good)';
-          note.textContent = '목표 달성. 보너스 XP가 지급됐습니다.';
-        } else if (timer.state === 'expired') {
+        if (timer.state === 'expired') {
           clock.className = 'clock bad';
           bar.style.background = 'var(--bad)';
           note.textContent = '시간 초과. 복습 완료 XP는 그대로 받을 수 있습니다.';
@@ -1392,16 +1388,6 @@
         clearInterval(timerId);
         timer = { state: 'idle', total: 0, remaining: 0, bonus: false };
         renderTimer();
-      }
-
-      function awardTimerBonus(data) {
-        if (timer.state !== 'running' || timer.bonus) return { awarded: false, levelUp: null };
-        if (!allReviewsDone(data)) return { awarded: false, levelUp: null };
-        timer.bonus = true;
-        timer.state = 'success';
-        clearInterval(timerId);
-        const levelUp = addXp(data, XP.timerBonus);
-        return { awarded: true, levelUp };
       }
 
       $('vocabForm').addEventListener('submit', event => {
@@ -1523,10 +1509,11 @@
           if (batch && !batch.done.includes(interval)) {
             batch.done.push(interval);
             const levelUp = addXp(data, XP.review[interval]);
-            const bonus = awardTimerBonus(data);
+            const bonusAwarded = window.confirm('시간 안에 끝냈나요?');
+            const bonusLevelUp = bonusAwarded ? addXp(data, XP.timerBonus) : null;
             save(data);
-            const earned = `복습 완료 +${XP.review[interval]} XP${bonus.awarded ? ` · 목표 달성 +${XP.timerBonus} XP` : ''}`;
-            toast(levelUp || bonus.levelUp ? `레벨 업: ${bonus.levelUp || levelUp}` : earned);
+            const earned = `복습 완료 +${XP.review[interval]} XP${bonusAwarded ? ` · 시간 보너스 +${XP.timerBonus} XP` : ''}`;
+            toast(levelUp || bonusLevelUp ? `레벨 업: ${bonusLevelUp || levelUp}` : earned);
             render();
           }
           return;

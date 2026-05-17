@@ -392,6 +392,25 @@
       font-weight: 800;
     }
 
+    .collapse-toggle {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(255,255,255,.06);
+      color: #cbd1df;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .collapse-toggle:hover {
+      background: rgba(255,255,255,.10);
+    }
+
+    .collapsible-body[hidden] {
+      display: none;
+    }
+
     .hint {
       color: #b7bdcb;
       font-size: 12px;
@@ -939,8 +958,13 @@
         </section>
 
         <section class="panel">
-          <div class="panel-title">어휘 배치</div>
-          <div class="list" id="batchList"></div>
+          <div class="panel-title">
+            <span>어휘 배치</span>
+            <button class="collapse-toggle" id="batchToggle" type="button" aria-expanded="false" aria-controls="batchListWrap">펼치기</button>
+          </div>
+          <div class="collapsible-body" id="batchListWrap" hidden>
+            <div class="list" id="batchList"></div>
+          </div>
         </section>
       </div>
 
@@ -1163,6 +1187,7 @@
       let state = freshData();
       let persistTimer = null;
       let renderedStudyDay = null;
+      let batchListOpen = localStorage.getItem('study-loop-batch-list-open') === 'true';
 
       function freshData() {
         return {
@@ -1702,6 +1727,9 @@
         const data = load();
         renderTaskSubjects(data);
         renderedStudyDay = today();
+        $('batchListWrap').hidden = !batchListOpen;
+        $('batchToggle').textContent = batchListOpen ? '접기' : '펼치기';
+        $('batchToggle').setAttribute('aria-expanded', batchListOpen ? 'true' : 'false');
         const level = levelIndex(data.xp);
         const levelNumber = level + 1;
         const current = LEVELS[level];
@@ -1900,6 +1928,13 @@
           const panel = $('crystalPanel');
           panel.classList.toggle('open');
           $('crystalToggle').setAttribute('aria-expanded', panel.classList.contains('open') ? 'true' : 'false');
+          return;
+        }
+
+        if (event.target.closest('#batchToggle')) {
+          batchListOpen = !batchListOpen;
+          localStorage.setItem('study-loop-batch-list-open', batchListOpen ? 'true' : 'false');
+          render();
           return;
         }
 

@@ -96,7 +96,6 @@
     .tab-btn:hover { color: var(--ink-2); }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
     .bar-spacer { flex: 1; }
-    .bar-actions { display: flex; align-items: center; gap: 6px; }
     .file-input { display: none; }
 
     /* ── Page ── */
@@ -126,6 +125,46 @@
     .card-note { font-size: 12px; font-weight: 600; color: var(--muted); }
     .card-body { padding: 20px; }
     .card-body.sm { padding: 16px; }
+    .collapsible-card > summary {
+      list-style: none;
+      cursor: pointer;
+    }
+    .collapsible-card > summary::-webkit-details-marker { display: none; }
+    .sync-summary {
+      min-height: 44px;
+      user-select: none;
+    }
+    .sync-summary::after {
+      content: "▾";
+      color: var(--muted);
+      font-size: 13px;
+      transition: transform .15s ease;
+    }
+    .collapsible-card[open] .sync-summary::after { transform: rotate(180deg); }
+    .sync-head {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .sync-head-status {
+      display: inline-flex;
+      align-items: center;
+      max-width: 136px;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 99px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .sync-head-status.ok { background: #ecfdf3; color: #067647; }
+    .sync-head-status.warn { background: #fffbeb; color: #92400e; }
+    .sync-head-status.err { background: #fff5f5; color: var(--danger); }
 
     /* ── Fields ── */
     .field { display: grid; gap: 5px; }
@@ -414,6 +453,12 @@
     .sync-status.ok { background: #ecfdf3; color: #067647; }
     .sync-status.warn { background: #fffbeb; color: #92400e; }
     .sync-status.err { background: #fff5f5; color: var(--danger); }
+    .data-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .data-actions .btn { width: 100%; }
 
     /* ── Responsive ── */
     @media (max-width: 860px) {
@@ -459,11 +504,6 @@
       <button class="tab-btn" data-tab="review" type="button">복습</button>
     </nav>
     <div class="bar-spacer"></div>
-    <div class="bar-actions">
-      <button class="btn btn-secondary btn-sm" id="exportBtn" type="button">내보내기</button>
-      <button class="btn btn-secondary btn-sm" id="importBtn" type="button">가져오기</button>
-      <input class="file-input" id="importFile" type="file" accept="application/json">
-    </div>
   </div>
 </header>
 
@@ -642,8 +682,14 @@
         </div>
 
         <div class="card">
-          <div class="card-head"><span class="card-title">GitHub 동기화</span></div>
-          <div class="card-body sm">
+          <details class="collapsible-card" id="syncDetails">
+            <summary class="card-head sync-summary">
+              <span class="sync-head">
+                <span class="card-title">GitHub 동기화</span>
+                <span class="sync-head-status" id="syncHeadStatus">로컬 저장</span>
+              </span>
+            </summary>
+            <div class="card-body sm">
             <div class="stack" style="gap:12px;">
               <label class="field">
                 <span class="field-label">Gist ID</span>
@@ -667,7 +713,22 @@
                 <button class="btn btn-secondary btn-sm" id="pullSyncBtn" type="button">내려받기</button>
                 <button class="btn btn-secondary btn-sm" id="pushSyncBtn" type="button">올리기</button>
               </div>
-              <p class="help-text">토큰은 이 기기의 브라우저에만 저장됩니다. GitHub에서 <strong>gist</strong> 권한만 가진 토큰을 만들어 넣으세요.</p>
+              <p class="help-text">설정 후에는 문장 등록, 수정, 삭제, 복습 기록이 자동으로 GitHub Gist에 저장되고 페이지를 열 때 자동으로 병합됩니다. 토큰은 이 기기의 브라우저에만 저장됩니다.</p>
+            </div>
+            </div>
+          </details>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">데이터 백업</span></div>
+          <div class="card-body sm">
+            <div class="stack" style="gap:10px;">
+              <div class="data-actions">
+                <button class="btn btn-secondary btn-sm" id="exportBtn" type="button">내보내기</button>
+                <button class="btn btn-secondary btn-sm" id="importBtn" type="button">가져오기</button>
+                <input class="file-input" id="importFile" type="file" accept="application/json">
+              </div>
+              <p class="help-text">수동 백업용입니다. 여러 기기에서 이어 쓰려면 GitHub 동기화를 설정하세요.</p>
             </div>
           </div>
         </div>
@@ -698,6 +759,8 @@
   const STORAGE_KEY = "sentence-chunk-trainer:v1";
   const SYNC_KEY = "sentence-chunk-trainer:github-sync:v1";
   const REVIEW_HISTORY_KEY = "sentence-chunk-trainer:review-history:v1";
+  const DELETED_ITEMS_KEY = "sentence-chunk-trainer:deleted-items:v1";
+  const AUTO_SYNC_DELAY = 1200;
 
   const LANGUAGES = [
     { code: "en", label: "영어", short: "EN", aliases: ["english", "영어"] },
@@ -753,6 +816,8 @@
     syncToken: document.querySelector("#syncToken"),
     syncFileName: document.querySelector("#syncFileName"),
     syncStatus: document.querySelector("#syncStatus"),
+    syncHeadStatus: document.querySelector("#syncHeadStatus"),
+    syncDetails: document.querySelector("#syncDetails"),
     saveSyncBtn: document.querySelector("#saveSyncBtn"),
     createGistBtn: document.querySelector("#createGistBtn"),
     mergeSyncBtn: document.querySelector("#mergeSyncBtn"),
@@ -768,6 +833,10 @@
   let lastExtractSettings = null;
   let syncSettings = loadSyncSettings();
   let reviewHistory = loadReviewHistory();
+  let deletedItems = loadDeletedItems();
+  let autoSyncTimer = null;
+  let syncInFlight = false;
+  let syncQueued = false;
 
   // ── Tabs ──
   const tabBtns = document.querySelectorAll(".tab-btn");
@@ -834,6 +903,41 @@
     localStorage.setItem(REVIEW_HISTORY_KEY, JSON.stringify(reviewHistory));
   }
 
+  function loadDeletedItems() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(DELETED_ITEMS_KEY) || "[]");
+      return normalizeDeletedItems(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  function normalizeDeletedItems(value) {
+    if (!Array.isArray(value)) return [];
+    const byId = new Map();
+    value.forEach(item => {
+      if (!item?.id) return;
+      const deletedAt = item.deletedAt || new Date().toISOString();
+      const current = byId.get(item.id);
+      if (!current || new Date(deletedAt).getTime() > new Date(current.deletedAt).getTime()) {
+        byId.set(item.id, { id: String(item.id), deletedAt });
+      }
+    });
+    return [...byId.values()];
+  }
+
+  function saveDeletedItems() {
+    localStorage.setItem(DELETED_ITEMS_KEY, JSON.stringify(deletedItems));
+  }
+
+  function markDeletedSentence(id) {
+    deletedItems = normalizeDeletedItems([
+      ...deletedItems,
+      { id, deletedAt: new Date().toISOString() },
+    ]);
+    saveDeletedItems();
+  }
+
   function localDateKey(date = new Date()) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -878,25 +982,51 @@
     }
   }
 
-  function saveSyncSettings() {
-    syncSettings = {
+  function readSyncSettingsFields() {
+    return {
       gistId: els.syncGistId.value.trim(),
       token: els.syncToken.value.trim(),
       fileName: els.syncFileName.value.trim() || "sentences.json",
     };
+  }
+
+  function saveSyncSettings({ startSync = true } = {}) {
+    syncSettings = readSyncSettingsFields();
     localStorage.setItem(SYNC_KEY, JSON.stringify(syncSettings));
-    setSyncStatus(syncSettings.gistId ? "설정이 저장되었습니다." : "토큰이 저장되었습니다. 새 Gist를 만들거나 Gist ID를 입력하세요.", "ok");
+    if (hasSyncSettings() && startSync) {
+      setSyncStatus("설정이 저장되었습니다. 자동 동기화를 시작합니다.", "ok");
+      syncMerge({ auto: true });
+    } else {
+      const message = !syncSettings.token
+        ? "GitHub Token을 입력하면 자동 동기화됩니다."
+        : "토큰이 저장되었습니다. 새 Gist를 만들거나 Gist ID를 입력하세요.";
+      setSyncStatus(message, "warn");
+    }
   }
 
   function hydrateSyncSettings() {
     els.syncGistId.value = syncSettings.gistId;
     els.syncToken.value = syncSettings.token;
     els.syncFileName.value = syncSettings.fileName;
+    setSyncStatus(hasSyncSettings() ? "자동 동기화 준비됨" : "이 기기에는 아직 GitHub 동기화가 설정되지 않았습니다.", hasSyncSettings() ? "ok" : "");
   }
 
   function setSyncStatus(message, tone = "") {
     els.syncStatus.textContent = message;
     els.syncStatus.className = `sync-status ${tone}`.trim();
+    els.syncHeadStatus.textContent = tone === "err" ? "확인 필요" : (hasSyncSettings() ? "자동 동기화" : "로컬 저장");
+    els.syncHeadStatus.className = `sync-head-status ${tone}`.trim();
+  }
+
+  function hasSyncSettings() {
+    return Boolean(syncSettings.gistId && syncSettings.token && syncSettings.fileName);
+  }
+
+  function queueAutoSync() {
+    if (!hasSyncSettings()) return;
+    clearTimeout(autoSyncTimer);
+    setSyncStatus("변경사항을 GitHub에 자동 저장할 준비 중입니다...", "warn");
+    autoSyncTimer = setTimeout(() => syncMerge({ auto: true }), AUTO_SYNC_DELAY);
   }
 
   function formatDate(iso) {
@@ -1081,6 +1211,7 @@
       });
     }
     saveSentences();
+    queueAutoSync();
     resetForm();
     renderAll();
   }
@@ -1114,6 +1245,7 @@
     sentences = [...rows.map(i => ({ ...i, createdAt: ts, updatedAt: ts })), ...sentences];
     els.bulkInput.value = "";
     saveSentences();
+    queueAutoSync();
     renderAll();
   }
 
@@ -1143,11 +1275,13 @@
     }
     if (button.dataset.action === "delete") {
       if (!confirm("이 문장을 삭제할까요?")) return;
+      markDeletedSentence(id);
       sentences = sentences.filter(e => e.id !== id);
       reviewQueue = reviewQueue.filter(eid => eid !== id);
       if (reviewIndex >= reviewQueue.length) reviewIndex = Math.max(0, reviewQueue.length - 1);
     }
     saveSentences();
+    queueAutoSync();
     renderAll();
   }
 
@@ -1238,6 +1372,7 @@
       item.lastReviewedAt = now;
       saveSentences();
       bumpReviewHistory();
+      queueAutoSync();
     }
     reviewIndex++;
     showTranslation = false;
@@ -1251,7 +1386,7 @@
   }
 
   function exportJson() {
-    const blob = new Blob([JSON.stringify(sentences, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(syncPayload(), null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -1265,11 +1400,19 @@
     try {
       const text = await file.text();
       const parsed = JSON.parse(text);
-      if (!Array.isArray(parsed)) throw new Error();
-      const normalized = parsed.map(normalizeSentence).filter(Boolean);
+      const importedSentences = Array.isArray(parsed) ? parsed : parsed.sentences;
+      if (!Array.isArray(importedSentences)) throw new Error();
+      const normalized = importedSentences.map(normalizeSentence).filter(Boolean);
       const ok = confirm(`${normalized.length}개를 가져옵니다. 기존 문장 뒤에 추가할까요? 취소하면 교체합니다.`);
       sentences = ok ? [...normalized, ...sentences] : normalized;
+      if (!ok) {
+        reviewHistory = normalizeReviewHistory(parsed.reviewHistory);
+        deletedItems = normalizeDeletedItems(parsed.deletedItems);
+        saveReviewHistory();
+        saveDeletedItems();
+      }
       saveSentences();
+      queueAutoSync();
       reviewQueue = []; reviewIndex = 0; showTranslation = false;
       renderAll();
     } catch { alert("JSON 파일을 읽지 못했습니다."); }
@@ -1292,11 +1435,13 @@
       updatedAt: new Date().toISOString(),
       sentences,
       reviewHistory: normalizeReviewHistory(reviewHistory),
+      deletedItems: normalizeDeletedItems(deletedItems),
     };
   }
 
   function requireSyncSettings(needsGist = true) {
-    saveSyncSettings();
+    syncSettings = readSyncSettingsFields();
+    localStorage.setItem(SYNC_KEY, JSON.stringify(syncSettings));
     if (!syncSettings.token) throw new Error("GitHub Token을 입력하세요.");
     if (needsGist && !syncSettings.gistId) throw new Error("Gist ID를 입력하거나 새 Gist를 먼저 만드세요.");
   }
@@ -1356,6 +1501,7 @@
     return {
       sentences: remote.map(normalizeSentence).filter(Boolean),
       reviewHistory: normalizeReviewHistory(parsed.reviewHistory),
+      deletedItems: normalizeDeletedItems(parsed.deletedItems),
     };
   }
 
@@ -1373,7 +1519,7 @@
     });
   }
 
-  function mergeSentences(localItems, remoteItems) {
+  function mergeSentences(localItems, remoteItems, deleted = deletedItems) {
     const byId = new Map();
     [...localItems, ...remoteItems].forEach(item => {
       const current = byId.get(item.id);
@@ -1385,7 +1531,16 @@
       const nextTime = new Date(item.updatedAt || item.createdAt || 0).getTime();
       byId.set(item.id, nextTime >= currentTime ? item : current);
     });
-    return [...byId.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    const deletedById = new Map(normalizeDeletedItems(deleted).map(item => [item.id, item.deletedAt]));
+    return [...byId.values()]
+      .filter(item => {
+        const deletedAt = deletedById.get(item.id);
+        if (!deletedAt) return true;
+        const itemTime = new Date(item.updatedAt || item.createdAt || 0).getTime();
+        const deletedTime = new Date(deletedAt).getTime();
+        return itemTime > deletedTime;
+      })
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
 
   function mergeReviewHistory(localHistory, remoteHistory) {
@@ -1396,19 +1551,36 @@
     return merged;
   }
 
-  async function syncMerge() {
+  function mergeDeletedItems(localDeleted, remoteDeleted) {
+    return normalizeDeletedItems([...normalizeDeletedItems(localDeleted), ...normalizeDeletedItems(remoteDeleted)]);
+  }
+
+  async function syncMerge({ auto = false } = {}) {
+    if (syncInFlight) {
+      syncQueued = true;
+      return;
+    }
+    syncInFlight = true;
     try {
-      setSyncStatus("GitHub와 병합 동기화 중입니다...", "warn");
+      setSyncStatus(auto ? "GitHub와 자동 동기화 중입니다..." : "GitHub와 병합 동기화 중입니다...", "warn");
       const remote = await readRemoteData();
-      sentences = mergeSentences(sentences, remote.sentences);
+      deletedItems = mergeDeletedItems(deletedItems, remote.deletedItems);
+      sentences = mergeSentences(sentences, remote.sentences, deletedItems);
       reviewHistory = mergeReviewHistory(reviewHistory, remote.reviewHistory);
       saveSentences();
       saveReviewHistory();
+      saveDeletedItems();
       await writeRemoteSentences();
       renderAll();
-      setSyncStatus(`동기화 완료: ${sentences.length}개 문장`, "ok");
+      setSyncStatus(`${auto ? "자동 동기화" : "동기화"} 완료: ${sentences.length}개 문장`, "ok");
     } catch (error) {
       setSyncStatus(error.message, "err");
+    } finally {
+      syncInFlight = false;
+      if (syncQueued) {
+        syncQueued = false;
+        queueAutoSync();
+      }
     }
   }
 
@@ -1422,8 +1594,10 @@
       }
       sentences = remote.sentences;
       reviewHistory = remote.reviewHistory;
+      deletedItems = remote.deletedItems;
       saveSentences();
       saveReviewHistory();
+      saveDeletedItems();
       reviewQueue = []; reviewIndex = 0; showTranslation = false;
       renderAll();
       setSyncStatus(`내려받기 완료: ${sentences.length}개 문장`, "ok");
@@ -1483,6 +1657,7 @@
 
   hydrateSyncSettings();
   renderAll();
+  if (hasSyncSettings()) syncMerge({ auto: true });
 </script>
 </body>
 </html>

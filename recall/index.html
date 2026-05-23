@@ -760,6 +760,7 @@
   const SYNC_KEY = "sentence-chunk-trainer:github-sync:v1";
   const REVIEW_HISTORY_KEY = "sentence-chunk-trainer:review-history:v1";
   const DELETED_ITEMS_KEY = "sentence-chunk-trainer:deleted-items:v1";
+  const PUBLIC_DATA_URL = "data/sentences.json";
   const AUTO_SYNC_DELAY = 1200;
 
   const LANGUAGES = [
@@ -1439,6 +1440,41 @@
     };
   }
 
+  function parseDataPayload(parsed) {
+    const remote = Array.isArray(parsed) ? parsed : parsed.sentences;
+    if (!Array.isArray(remote)) throw new Error("데이터 파일 형식이 올바르지 않습니다.");
+    return {
+      sentences: remote.map(normalizeSentence).filter(Boolean),
+      reviewHistory: normalizeReviewHistory(parsed.reviewHistory),
+      deletedItems: normalizeDeletedItems(parsed.deletedItems),
+    };
+  }
+
+  async function loadPublicData() {
+    try {
+      setSyncStatus("공개 DB를 불러오는 중입니다...", "warn");
+      const response = await fetch(`${PUBLIC_DATA_URL}?v=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) {
+        if (response.status === 404) {
+          setSyncStatus(hasSyncSettings() ? "자동 동기화 준비됨" : "아직 공개 DB 파일이 없습니다. 로컬 데이터로 시작합니다.", hasSyncSettings() ? "ok" : "warn");
+          return;
+        }
+        throw new Error(`공개 DB를 불러오지 못했습니다. (${response.status})`);
+      }
+      const remote = parseDataPayload(await response.json());
+      deletedItems = mergeDeletedItems(deletedItems, remote.deletedItems);
+      sentences = mergeSentences(sentences, remote.sentences, deletedItems);
+      reviewHistory = mergeReviewHistory(reviewHistory, remote.reviewHistory);
+      saveSentences();
+      saveReviewHistory();
+      saveDeletedItems();
+      renderAll();
+      setSyncStatus(hasSyncSettings() ? `공개 DB ${remote.sentences.length}개를 불러왔습니다. 자동 동기화 준비됨` : `공개 DB ${remote.sentences.length}개를 불러왔습니다.`, "ok");
+    } catch (error) {
+      setSyncStatus(error.message, "err");
+    }
+  }
+
   function requireSyncSettings(needsGist = true) {
     syncSettings = readSyncSettingsFields();
     localStorage.setItem(SYNC_KEY, JSON.stringify(syncSettings));
@@ -1496,13 +1532,7 @@
     const file = gist.files?.[syncSettings.fileName];
     if (!file?.content) throw new Error(`${syncSettings.fileName} 파일을 찾지 못했습니다.`);
     const parsed = JSON.parse(file.content);
-    const remote = Array.isArray(parsed) ? parsed : parsed.sentences;
-    if (!Array.isArray(remote)) throw new Error("동기화 파일 형식이 올바르지 않습니다.");
-    return {
-      sentences: remote.map(normalizeSentence).filter(Boolean),
-      reviewHistory: normalizeReviewHistory(parsed.reviewHistory),
-      deletedItems: normalizeDeletedItems(parsed.deletedItems),
-    };
+    return parseDataPayload(parsed);
   }
 
   async function writeRemoteSentences() {
@@ -1657,7 +1687,9 @@
 
   hydrateSyncSettings();
   renderAll();
-  if (hasSyncSettings()) syncMerge({ auto: true });
+  loadPublicData().then(() => {
+    if (hasSyncSettings()) syncMerge({ auto: true });
+  });
 </script>
 </body>
 </html>

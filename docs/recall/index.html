@@ -185,14 +185,14 @@
     /* ── Add form ── */
     .form-row {
       display: grid;
-      grid-template-columns: minmax(0,1fr) minmax(0,1fr) 90px auto;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr) 118px 90px auto;
       gap: 10px; align-items: end;
     }
 
     /* ── List toolbar ── */
     .list-toolbar {
       display: grid;
-      grid-template-columns: minmax(0,1fr) 130px 118px;
+      grid-template-columns: minmax(0,1fr) 130px 130px 118px;
       gap: 8px; margin-bottom: 12px;
     }
     .search-wrap { position: relative; }
@@ -300,9 +300,9 @@
       background: var(--accent-soft); color: var(--accent); white-space: nowrap;
     }
     .review-sentence {
-      font-size: clamp(22px, 3vw, 32px);
+      font-size: clamp(19px, 2.35vw, 26px);
       font-family: 'Lora', Georgia, serif;
-      font-weight: 700; line-height: 1.5;
+      font-weight: 700; line-height: 1.45;
       color: var(--ink); overflow-wrap: anywhere;
       flex: 1; display: flex; align-items: center;
     }
@@ -433,6 +433,19 @@
                   <input id="translationInput" autocomplete="off" required placeholder="전제가 바뀌면…">
                 </label>
                 <label class="field">
+                  <span class="field-label">언어</span>
+                  <select id="languageInput">
+                    <option value="en">영어</option>
+                    <option value="es">스페인어</option>
+                    <option value="ja">일본어</option>
+                    <option value="fr">프랑스어</option>
+                    <option value="de">독일어</option>
+                    <option value="zh">중국어</option>
+                    <option value="ko">한국어</option>
+                    <option value="other">기타</option>
+                  </select>
+                </label>
+                <label class="field">
                   <span class="field-label">난이도</span>
                   <select id="difficultyInput">
                     <option value="1">1</option>
@@ -456,12 +469,25 @@
           </div>
           <div class="card-body">
             <div class="stack" style="gap:10px;">
-              <textarea id="bulkInput" placeholder="원문 | 해석 | 난이도&#10;원문[TAB]해석[TAB]난이도&#10;난이도 생략 시 2로 저장됩니다."></textarea>
+              <label class="field">
+                <span class="field-label">기본 언어</span>
+                <select id="bulkLanguageInput">
+                  <option value="en">영어</option>
+                  <option value="es">스페인어</option>
+                  <option value="ja">일본어</option>
+                  <option value="fr">프랑스어</option>
+                  <option value="de">독일어</option>
+                  <option value="zh">중국어</option>
+                  <option value="ko">한국어</option>
+                  <option value="other">기타</option>
+                </select>
+              </label>
+              <textarea id="bulkInput" placeholder="원문 | 해석 | 난이도&#10;es | 원문 | 해석 | 난이도&#10;원문[TAB]해석[TAB]난이도&#10;언어를 생략하면 기본 언어로 저장됩니다."></textarea>
               <div class="row">
                 <button class="btn btn-primary" id="bulkAddBtn" type="button">일괄 등록</button>
                 <button class="btn btn-secondary" id="sampleBtn" type="button">샘플 넣기</button>
               </div>
-              <p class="help-text">구분자: 탭 또는 <code>|</code> — 예) <strong>원문 | 해석 | 3</strong></p>
+              <p class="help-text">구분자: 탭 또는 <code>|</code> — 예) <strong>원문 | 해석 | 3</strong>, 또는 <strong>es | 원문 | 해석 | 3</strong></p>
             </div>
           </div>
         </div>
@@ -477,6 +503,17 @@
                 <span class="search-icon">⌕</span>
                 <input id="searchInput" placeholder="검색">
               </div>
+              <select id="listLanguageFilter">
+                <option value="all">전체 언어</option>
+                <option value="en">영어</option>
+                <option value="es">스페인어</option>
+                <option value="ja">일본어</option>
+                <option value="fr">프랑스어</option>
+                <option value="de">독일어</option>
+                <option value="zh">중국어</option>
+                <option value="ko">한국어</option>
+                <option value="other">기타</option>
+              </select>
               <select id="listDifficultyFilter">
                 <option value="all">전체 난이도</option>
                 <option value="1">난이도 1</option>
@@ -508,6 +545,19 @@
           <div class="card-head"><span class="card-title">복습 추출</span></div>
           <div class="card-body sm">
             <form class="stack" style="gap:14px;" id="extractFormManage">
+              <label class="field">
+                <span class="field-label">복습 언어</span>
+                <select id="extractLanguageManage">
+                  <option value="en">영어</option>
+                  <option value="es">스페인어</option>
+                  <option value="ja">일본어</option>
+                  <option value="fr">프랑스어</option>
+                  <option value="de">독일어</option>
+                  <option value="zh">중국어</option>
+                  <option value="ko">한국어</option>
+                  <option value="other">기타</option>
+                </select>
+              </label>
               <label class="field">
                 <span class="field-label">문장 수</span>
                 <input id="extractCountManage" type="number" min="1" max="100" value="10">
@@ -591,18 +641,41 @@
   const STORAGE_KEY = "sentence-chunk-trainer:v1";
   const SYNC_KEY = "sentence-chunk-trainer:github-sync:v1";
 
+  const LANGUAGES = [
+    { code: "en", label: "영어", short: "EN", aliases: ["english", "영어"] },
+    { code: "es", label: "스페인어", short: "ES", aliases: ["spanish", "espanol", "español", "스페인어"] },
+    { code: "ja", label: "일본어", short: "JA", aliases: ["jp", "japanese", "일본어"] },
+    { code: "fr", label: "프랑스어", short: "FR", aliases: ["french", "프랑스어"] },
+    { code: "de", label: "독일어", short: "DE", aliases: ["german", "독일어"] },
+    { code: "zh", label: "중국어", short: "ZH", aliases: ["cn", "chinese", "중국어"] },
+    { code: "ko", label: "한국어", short: "KO", aliases: ["kr", "korean", "한국어"] },
+    { code: "other", label: "기타", short: "ETC", aliases: ["etc", "기타", "other"] },
+  ];
+  const LANGUAGE_CODES = new Set(LANGUAGES.map(lang => lang.code));
+  const LANGUAGE_ALIAS_MAP = new Map(
+    LANGUAGES.flatMap(lang => [
+      [lang.code, lang.code],
+      [lang.label, lang.code],
+      [lang.short.toLowerCase(), lang.code],
+      ...lang.aliases.map(alias => [alias.toLowerCase(), lang.code]),
+    ])
+  );
+
   const els = {
     form: document.querySelector("#sentenceForm"),
     formTitle: document.querySelector("#formTitle"),
     original: document.querySelector("#originalInput"),
     translation: document.querySelector("#translationInput"),
+    language: document.querySelector("#languageInput"),
     difficulty: document.querySelector("#difficultyInput"),
     saveBtn: document.querySelector("#saveBtn"),
     cancelEditBtn: document.querySelector("#cancelEditBtn"),
     bulkInput: document.querySelector("#bulkInput"),
+    bulkLanguage: document.querySelector("#bulkLanguageInput"),
     bulkAddBtn: document.querySelector("#bulkAddBtn"),
     sampleBtn: document.querySelector("#sampleBtn"),
     search: document.querySelector("#searchInput"),
+    listLanguage: document.querySelector("#listLanguageFilter"),
     listDifficulty: document.querySelector("#listDifficultyFilter"),
     listFavorite: document.querySelector("#listFavoriteFilter"),
     list: document.querySelector("#sentenceList"),
@@ -610,6 +683,7 @@
     statsManage: document.querySelector("#statsManage"),
     statsReview: document.querySelector("#statsReview"),
     extractFormManage: document.querySelector("#extractFormManage"),
+    extractLanguageManage: document.querySelector("#extractLanguageManage"),
     extractCountManage: document.querySelector("#extractCountManage"),
     extractFavoriteManage: document.querySelector("#extractFavoriteManage"),
     difficultyChecksManage: document.querySelector("#difficultyChecksManage"),
@@ -660,10 +734,12 @@
   function normalizeSentence(item) {
     if (!item || !item.original || !item.translation) return null;
     const difficulty = Number(item.difficulty);
+    const language = normalizeLanguage(item.language || item.lang || item.sourceLanguage || "en");
     return {
       id: item.id || uid(),
       original: String(item.original).trim(),
       translation: String(item.translation).trim(),
+      language,
       difficulty: [1,2,3,4].includes(difficulty) ? difficulty : 2,
       favorite: Boolean(item.favorite),
       reviewCount: Math.max(0, Number(item.reviewCount) || 0),
@@ -675,6 +751,20 @@
 
   function saveSentences() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sentences));
+  }
+
+  function normalizeLanguage(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "en";
+    return LANGUAGE_ALIAS_MAP.get(raw.toLowerCase()) || (LANGUAGE_CODES.has(raw) ? raw : "other");
+  }
+
+  function languageLabel(code) {
+    return LANGUAGES.find(lang => lang.code === normalizeLanguage(code))?.label || "기타";
+  }
+
+  function languageShort(code) {
+    return LANGUAGES.find(lang => lang.code === normalizeLanguage(code))?.short || "ETC";
   }
 
   function loadSyncSettings() {
@@ -736,9 +826,11 @@
 
   function getVisibleSentences() {
     const keyword = els.search.value.trim().toLowerCase();
+    const language = els.listLanguage.value;
     const difficulty = els.listDifficulty.value;
     const favorite = els.listFavorite.value;
     return sentences
+      .filter(i => language === "all" || i.language === language)
       .filter(i => difficulty === "all" || String(i.difficulty) === difficulty)
       .filter(i => favorite === "all" || (favorite === "fav" ? i.favorite : !i.favorite))
       .filter(i => !keyword || `${i.original} ${i.translation}`.toLowerCase().includes(keyword))
@@ -758,6 +850,7 @@
           <p class="s-original">${escapeHtml(item.original)}</p>
           <p class="s-translation">${escapeHtml(item.translation)}</p>
           <div class="s-meta">
+            <span class="pill pill-accent">${languageShort(item.language)}</span>
             <span class="pill pill-accent">Lv.${item.difficulty}</span>
             <span class="pill">복습 ${item.reviewCount}회</span>
             ${item.favorite ? `<span class="pill">★</span>` : ""}
@@ -789,6 +882,13 @@
       value: sentences.filter(i => i.difficulty === lv).length
     }));
     const maxDiff = Math.max(...byDiff.map(d => d.value), 1);
+    const byLang = LANGUAGES
+      .map(lang => ({
+        ...lang,
+        value: sentences.filter(i => i.language === lang.code).length
+      }))
+      .filter(lang => lang.value > 0);
+    const maxLang = Math.max(...byLang.map(lang => lang.value), 1);
 
     const mainHtml = [
       { label: "전체", value: total },
@@ -804,9 +904,23 @@
         <span class="diff-count">${d.value}</span>
       </div>
     `).join("");
+    const langHtml = byLang.length
+      ? byLang.map(lang => `
+        <div class="diff-row">
+          <span class="diff-level" style="width:32px;">${lang.short}</span>
+          <div class="diff-track"><div class="diff-fill" style="width:${Math.round(lang.value / maxLang * 100)}%"></div></div>
+          <span class="diff-count">${lang.value}</span>
+        </div>
+      `).join("")
+      : `<div class="help-text">아직 언어별 데이터가 없습니다.</div>`;
 
     const html = `
       <div class="stats-grid">${mainHtml}</div>
+      <div class="stats-divider">
+        <span class="stats-divider-label">언어 분포</span>
+        <div class="stats-divider-line"></div>
+      </div>
+      <div class="diff-rows">${langHtml}</div>
       <div class="stats-divider">
         <span class="stats-divider-label">난이도 분포</span>
         <div class="stats-divider-line"></div>
@@ -820,6 +934,7 @@
   function resetForm() {
     editingId = null;
     els.form.reset();
+    els.language.value = "en";
     els.difficulty.value = "1";
     els.formTitle.textContent = "문장 등록";
     els.saveBtn.textContent = "등록";
@@ -830,16 +945,17 @@
     event.preventDefault();
     const original = els.original.value.trim();
     const translation = els.translation.value.trim();
+    const language = normalizeLanguage(els.language.value);
     const difficulty = Number(els.difficulty.value);
     if (!original || !translation) return;
     if (editingId) {
       sentences = sentences.map(item => item.id === editingId
-        ? { ...item, original, translation, difficulty, updatedAt: new Date().toISOString() }
+        ? { ...item, original, translation, language, difficulty, updatedAt: new Date().toISOString() }
         : item
       );
     } else {
       sentences.unshift({
-        id: uid(), original, translation, difficulty,
+        id: uid(), original, translation, language, difficulty,
         favorite: false, reviewCount: 0,
         createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       });
@@ -849,22 +965,30 @@
     renderAll();
   }
 
-  function parseBulkLine(line) {
+  function parseBulkLine(line, defaultLanguage) {
     const delimiter = line.includes("\t") ? "\t" : "|";
     const parts = line.split(delimiter).map(p => p.trim()).filter(Boolean);
+    const first = parts[0]?.toLowerCase();
+    if (["언어", "language", "lang"].includes(first)) return null;
+    if (["원문", "original", "source"].includes(first)) return null;
     if (parts.length < 2) return null;
-    const difficulty = Number(parts[2] || 2);
+    const firstAsLanguage = parts.length >= 4 ? LANGUAGE_ALIAS_MAP.get(first) : null;
+    const language = firstAsLanguage || normalizeLanguage(defaultLanguage);
+    const original = firstAsLanguage ? parts[1] : parts[0];
+    const translation = firstAsLanguage ? parts[2] : parts[1];
+    const difficulty = Number((firstAsLanguage ? parts[3] : parts[2]) || 2);
     return normalizeSentence({
-      original: parts[0], translation: parts[1],
+      original, translation, language,
       difficulty: [1,2,3,4].includes(difficulty) ? difficulty : 2,
       reviewCount: 0, favorite: false,
     });
   }
 
   function addBulkSentences() {
+    const defaultLanguage = normalizeLanguage(els.bulkLanguage.value);
     const rows = els.bulkInput.value
       .split(/\r?\n/).map(l => l.trim()).filter(Boolean)
-      .map(parseBulkLine).filter(Boolean);
+      .map(line => parseBulkLine(line, defaultLanguage)).filter(Boolean);
     if (!rows.length) { alert("등록할 문장을 찾지 못했습니다."); return; }
     const ts = new Date().toISOString();
     sentences = [...rows.map(i => ({ ...i, createdAt: ts, updatedAt: ts })), ...sentences];
@@ -889,6 +1013,7 @@
       editingId = item.id;
       els.original.value = item.original;
       els.translation.value = item.translation;
+      els.language.value = item.language;
       els.difficulty.value = String(item.difficulty);
       els.formTitle.textContent = "문장 수정";
       els.saveBtn.textContent = "저장";
@@ -917,13 +1042,15 @@
       .map(e => e.item);
   }
 
-  function startReview(countEl, diffChecksEl, favEl, goToReviewTab) {
+  function startReview(languageEl, countEl, diffChecksEl, favEl, goToReviewTab) {
+    const language = normalizeLanguage(languageEl.value);
     const count = Math.max(1, Number(countEl.value) || 1);
     const difficulties = selectedDifficultiesFrom(diffChecksEl);
     const favorite = favEl.value;
-    lastExtractSettings = { countEl, diffChecksEl, favEl };
+    lastExtractSettings = { languageEl, countEl, diffChecksEl, favEl };
 
     const candidates = sentences
+      .filter(i => i.language === language)
       .filter(i => difficulties.includes(i.difficulty))
       .filter(i => favorite === "all" || (favorite === "fav" ? i.favorite : !i.favorite));
 
@@ -968,7 +1095,7 @@
       <div class="review-top">
         <span class="review-count">${reviewIndex + 1} / ${reviewQueue.length}</span>
         <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <span class="diff-badge">난이도 ${item.difficulty}${item.favorite ? " · ★" : ""}</span>
+        <span class="diff-badge">${languageLabel(item.language)} · 난이도 ${item.difficulty}${item.favorite ? " · ★" : ""}</span>
       </div>
       <div class="review-sentence">${escapeHtml(item.original)}</div>
       <div class="review-answer ${showTranslation ? "shown" : "hidden"}">
@@ -1031,8 +1158,8 @@
   function insertSamples() {
     els.bulkInput.value = [
       "The argument holds only if its hidden assumption is true. | 그 주장은 숨은 전제가 참일 때에만 성립한다. | 2",
-      "Having conceded the point, she shifted the discussion to its consequences. | 그 점을 인정한 뒤, 그녀는 논의를 그 결과로 옮겼다. | 3",
-      "What appears to be a contradiction is often a difference in scope. | 모순처럼 보이는 것은 흔히 범위의 차이다. | 2",
+      "es | Me di cuenta de que no era tan simple. | 그렇게 단순하지 않다는 걸 깨달았다. | 2",
+      "ja | 彼は何も言わずに部屋を出た。 | 그는 아무 말 없이 방을 나갔다. | 2",
       "No sooner had the policy changed than the market reacted. | 정책이 바뀌자마자 시장이 반응했다. | 4"
     ].join("\n");
     els.bulkInput.focus();
@@ -1184,13 +1311,14 @@
   els.bulkAddBtn.addEventListener("click", addBulkSentences);
   els.sampleBtn.addEventListener("click", insertSamples);
   els.search.addEventListener("input", renderList);
+  els.listLanguage.addEventListener("change", renderList);
   els.listDifficulty.addEventListener("change", renderList);
   els.listFavorite.addEventListener("change", renderList);
   els.list.addEventListener("click", handleListClick);
 
   els.extractFormManage.addEventListener("submit", e => {
     e.preventDefault();
-    startReview(els.extractCountManage, els.difficultyChecksManage, els.extractFavoriteManage, true);
+    startReview(els.extractLanguageManage, els.extractCountManage, els.difficultyChecksManage, els.extractFavoriteManage, true);
   });
 
   els.exportBtn.addEventListener("click", exportJson);
@@ -1207,8 +1335,8 @@
     if (e.target.id === "completeReviewBtn") completeReview();
     if (e.target.id === "skipReviewBtn") skipReview();
     if (e.target.id === "reviewAgainBtn" && lastExtractSettings) {
-      const { countEl, diffChecksEl, favEl } = lastExtractSettings;
-      startReview(countEl, diffChecksEl, favEl, false);
+      const { languageEl, countEl, diffChecksEl, favEl } = lastExtractSettings;
+      startReview(languageEl, countEl, diffChecksEl, favEl, false);
     }
   });
 

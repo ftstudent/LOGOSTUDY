@@ -4,6 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>rechunk — 문장 청킹 복습장</title>
+  <meta name="theme-color" content="#faf8f4">
+  <meta name="apple-mobile-web-app-title" content="rechunk">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="app-icon-512.png">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -376,7 +383,7 @@
 
 <header class="app-bar">
   <div class="app-bar-inner">
-    <a class="app-logo" href="#">
+    <a class="app-logo" id="logoReload" href="./" aria-label="rechunk 새로고침">
       <svg class="logo-icon" width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <rect x="2" y="4" width="8.5" height="2.4" rx="1.2" fill="currentColor" opacity="0.28"/>
         <rect x="12.2" y="4" width="9.8" height="2.4" rx="1.2" fill="currentColor" opacity="0.18"/>
@@ -1306,6 +1313,10 @@
 
   // ── Events ──
   els.form.addEventListener("submit", upsertSentence);
+  document.querySelector("#logoReload").addEventListener("click", event => {
+    event.preventDefault();
+    window.location.reload();
+  });
   els.cancelEditBtn.addEventListener("click", resetForm);
   els.bulkAddBtn.addEventListener("click", addBulkSentences);
   els.sampleBtn.addEventListener("click", insertSamples);

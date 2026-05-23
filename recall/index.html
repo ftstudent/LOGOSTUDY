@@ -1,0 +1,1197 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>recall — 문장 청킹 복습장</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf8f4;
+      --surface: #ffffff;
+      --surface-2: #f5f1eb;
+      --border: #e8e2d8;
+      --ink: #1c1816;
+      --ink-2: #3d3530;
+      --muted: #a0908a;
+      --accent: #c96442;
+      --accent-hover: #b5573a;
+      --accent-soft: #fdf0eb;
+      --accent-border: #f2c4ae;
+      --danger: #e53e3e;
+      --danger-soft: #fff5f5;
+      --warn-soft: #fffbeb;
+      --r: 10px;
+      --r-lg: 14px;
+      --shadow-card: 0 1px 3px rgba(50,25,10,.06), 0 4px 14px rgba(50,25,10,.05);
+      --shadow-stage: 0 2px 6px rgba(50,25,10,.07), 0 8px 28px rgba(50,25,10,.07);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { border: 0; cursor: pointer; background: none; }
+
+    /* ── App bar ── */
+    .app-bar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(250,248,244,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .app-bar-inner {
+      max-width: 1120px; margin: 0 auto;
+      padding: 0 24px;
+      display: flex; align-items: stretch; height: 52px;
+    }
+    .app-logo {
+      display: flex; align-items: center; gap: 9px;
+      padding-right: 32px; flex-shrink: 0;
+      text-decoration: none;
+    }
+    .logo-icon { color: var(--accent); flex-shrink: 0; }
+    .logo-text {
+      font-size: 17px; font-weight: 800;
+      color: var(--ink); letter-spacing: -0.4px;
+    }
+    .logo-text em {
+      font-style: normal;
+      color: var(--accent);
+    }
+    .tab-nav { display: flex; align-items: stretch; }
+    .tab-btn {
+      display: flex; align-items: center;
+      padding: 0 16px; font-size: 14px; font-weight: 600;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-btn:hover { color: var(--ink-2); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .bar-spacer { flex: 1; }
+    .bar-actions { display: flex; align-items: center; gap: 6px; }
+    .file-input { display: none; }
+
+    /* ── Page ── */
+    .page { max-width: 1120px; margin: 0 auto; padding: 24px; }
+    .tab-section { display: none; }
+    .tab-section.active { display: block; }
+    .two-col { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 20px; align-items: start; }
+    .review-col { display: grid; grid-template-columns: minmax(0,1fr) 272px; gap: 20px; align-items: start; }
+    .stack { display: grid; gap: 16px; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-card);
+    }
+    .card-head {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .6px; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .card-note { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .card-body { padding: 20px; }
+    .card-body.sm { padding: 16px; }
+
+    /* ── Fields ── */
+    .field { display: grid; gap: 5px; }
+    .field-label {
+      font-size: 11px; font-weight: 700;
+      color: var(--muted); letter-spacing: .5px; text-transform: uppercase;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      background: var(--bg); color: var(--ink);
+      outline: none; padding: 9px 12px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(201,100,66,.13);
+      background: #fff;
+    }
+    textarea { min-height: 110px; resize: vertical; line-height: 1.6; }
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a0908a' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      padding-right: 30px;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 38px; padding: 0 14px;
+      border-radius: var(--r); font-size: 14px; font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+      transition: all .12s; white-space: nowrap; flex-shrink: 0;
+    }
+    .btn-sm { height: 30px; padding: 0 11px; font-size: 13px; border-radius: 8px; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:active { transform: translateY(1px); }
+    .btn-secondary {
+      background: var(--surface); color: var(--ink-2);
+      border: 1.5px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--surface-2); }
+    .btn-ghost { color: var(--muted); padding: 0 10px; }
+    .btn-ghost:hover { color: var(--ink); background: var(--surface-2); border-radius: 8px; }
+    .btn-warn { background: var(--warn-soft); color: #78430a; border: 1.5px solid #f6d990; }
+    .btn-warn:hover { background: #fef3c7; }
+    .btn-icon {
+      width: 30px; height: 30px; padding: 0;
+      border-radius: 8px; font-size: 14px;
+      border: 1.5px solid var(--border);
+      background: var(--surface); color: var(--muted);
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all .12s;
+    }
+    .btn-icon:hover { color: var(--ink); background: var(--surface-2); }
+    .btn-icon.star-on { background: #fefce8; color: #c8920a; border-color: #f0d060; }
+    .btn-icon.del { background: var(--danger-soft); color: var(--danger); border-color: #fecaca; }
+    .btn-icon.del:hover { background: #ffe4e4; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    /* ── Add form ── */
+    .form-row {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr) 90px auto;
+      gap: 10px; align-items: end;
+    }
+
+    /* ── List toolbar ── */
+    .list-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 130px 118px;
+      gap: 8px; margin-bottom: 12px;
+    }
+    .search-wrap { position: relative; }
+    .search-icon {
+      position: absolute; left: 11px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted); font-size: 13px; pointer-events: none;
+    }
+    .search-wrap input { padding-left: 34px; }
+
+    /* ── Sentence list ── */
+    .sentence-list { display: grid; gap: 7px; max-height: 480px; overflow-y: auto; padding-right: 2px; }
+    .sentence-list::-webkit-scrollbar { width: 4px; }
+    .sentence-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .s-card {
+      display: flex; gap: 12px;
+      padding: 13px 15px;
+      border: 1.5px solid var(--border); border-radius: var(--r);
+      background: var(--surface);
+      transition: border-color .12s, box-shadow .12s;
+    }
+    .s-card:hover { border-color: #d4c8be; box-shadow: 0 2px 8px rgba(50,25,10,.07); }
+    .s-body { flex: 1; min-width: 0; }
+    .s-original { font-size: 15px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+    .s-translation { margin-top: 2px; font-size: 14px; color: var(--muted); line-height: 1.5; overflow-wrap: anywhere; }
+    .s-meta { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+    .s-dates { margin-top: 5px; font-size: 12px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; }
+    .s-dates-sep { opacity: .4; }
+    .pill {
+      display: inline-flex; align-items: center;
+      height: 20px; padding: 0 7px;
+      border-radius: 99px; font-size: 11px; font-weight: 700;
+      background: var(--surface-2); color: var(--muted); border: 1px solid var(--border);
+    }
+    .pill-accent { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-border); }
+    .s-actions { display: flex; gap: 4px; align-items: flex-start; flex-shrink: 0; }
+
+    /* ── Stats ── */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .stat {
+      background: var(--surface-2); border-radius: var(--r);
+      padding: 11px 13px;
+    }
+    .stat strong { display: block; font-size: 20px; font-weight: 800; line-height: 1.1; color: var(--ink); }
+    .stat span { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
+
+    .stats-divider {
+      display: flex; align-items: center; gap: 8px;
+      margin: 12px 0 8px;
+    }
+    .stats-divider-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+    .stats-divider-line { flex: 1; height: 1px; background: var(--border); }
+
+    .diff-rows { display: grid; gap: 7px; }
+    .diff-row { display: flex; align-items: center; gap: 8px; }
+    .diff-level { font-size: 12px; font-weight: 700; color: var(--muted); width: 14px; flex-shrink: 0; }
+    .diff-track {
+      flex: 1; height: 5px; background: var(--border);
+      border-radius: 99px; overflow: hidden;
+    }
+    .diff-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width .4s ease; }
+    .diff-count { font-size: 12px; font-weight: 700; color: var(--ink-2); width: 18px; text-align: right; flex-shrink: 0; }
+
+    /* ── Chips ── */
+    .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      height: 30px; padding: 0 12px;
+      border: 1.5px solid var(--border); border-radius: 99px;
+      font-size: 13px; font-weight: 700; color: var(--ink-2);
+      background: var(--surface); cursor: pointer;
+      transition: all .12s; user-select: none;
+    }
+    .chip input { display: none; }
+    .chip:has(input:checked) {
+      background: var(--accent-soft);
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+
+    /* ── Review stage ── */
+    .review-stage {
+      background: var(--surface);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-stage);
+      padding: 36px 40px;
+      min-height: 460px;
+      display: flex; flex-direction: column;
+    }
+    .review-top {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 32px;
+    }
+    .review-count { font-size: 13px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+    .progress-track {
+      flex: 1; height: 3px;
+      background: var(--border); border-radius: 99px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: var(--accent); border-radius: 99px;
+      transition: width .35s ease;
+    }
+    .diff-badge {
+      font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 99px;
+      background: var(--accent-soft); color: var(--accent); white-space: nowrap;
+    }
+    .review-sentence {
+      font-size: clamp(22px, 3vw, 32px);
+      font-family: 'Lora', Georgia, serif;
+      font-weight: 700; line-height: 1.5;
+      color: var(--ink); overflow-wrap: anywhere;
+      flex: 1; display: flex; align-items: center;
+    }
+    .review-answer {
+      margin-top: 20px; padding: 16px 20px;
+      border-radius: var(--r); line-height: 1.65;
+      font-size: 16px; overflow-wrap: anywhere;
+    }
+    .review-answer.hidden {
+      background: var(--surface-2);
+      border: 2px dashed var(--border);
+      color: var(--muted); font-size: 14px; text-align: center;
+    }
+    .review-answer.shown {
+      background: #fff7ed;
+      border: 2px solid #fcd9b6;
+      color: #7c3010;
+    }
+    .review-actions { display: flex; gap: 10px; margin-top: 22px; }
+    .review-actions .btn { flex: 1; height: 44px; font-size: 15px; }
+    .review-done {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; gap: 10px;
+    }
+    .review-done-icon {
+      width: 52px; height: 52px; border-radius: 99px;
+      background: var(--accent-soft);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 4px;
+    }
+    .review-done-title { font-size: 20px; font-weight: 800; }
+    .review-done-sub { font-size: 14px; color: var(--muted); }
+
+    /* ── Empty ── */
+    .empty {
+      border: 2px dashed var(--border); border-radius: var(--r);
+      padding: 28px 20px; color: var(--muted);
+      background: var(--surface-2); text-align: center; font-size: 14px; line-height: 1.6;
+    }
+    .help-text { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .sync-status {
+      min-height: 34px;
+      border-radius: var(--r);
+      padding: 8px 10px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .sync-status.ok { background: #ecfdf3; color: #067647; }
+    .sync-status.warn { background: #fffbeb; color: #92400e; }
+    .sync-status.err { background: #fff5f5; color: var(--danger); }
+
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+      .two-col, .review-col { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .page { padding: 14px; }
+      .app-bar-inner { padding: 0 14px; }
+      .form-row { grid-template-columns: 1fr; }
+      .list-toolbar { grid-template-columns: 1fr; }
+      .s-card { flex-direction: column; }
+      .review-stage { padding: 22px 18px; }
+      .review-actions { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-bar">
+  <div class="app-bar-inner">
+    <a class="app-logo" href="#">
+      <svg class="logo-icon" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="4" width="18" height="2.5" rx="1.25" fill="currentColor" opacity="0.25"/>
+        <rect x="2" y="9.75" width="11" height="2.5" rx="1.25" fill="currentColor"/>
+        <rect x="14.5" y="9.75" width="5.5" height="2.5" rx="1.25" fill="currentColor" opacity="0.2"/>
+        <rect x="2" y="15.5" width="14" height="2.5" rx="1.25" fill="currentColor" opacity="0.25"/>
+      </svg>
+      <span class="logo-text">re<em>call</em></span>
+    </a>
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="manage" type="button">관리</button>
+      <button class="tab-btn" data-tab="review" type="button">복습</button>
+    </nav>
+    <div class="bar-spacer"></div>
+    <div class="bar-actions">
+      <button class="btn btn-secondary btn-sm" id="exportBtn" type="button">내보내기</button>
+      <button class="btn btn-secondary btn-sm" id="importBtn" type="button">가져오기</button>
+      <input class="file-input" id="importFile" type="file" accept="application/json">
+    </div>
+  </div>
+</header>
+
+<main class="page">
+
+  <!-- 관리 탭 -->
+  <section class="tab-section active" id="manageSection">
+    <div class="two-col">
+      <div class="stack">
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title" id="formTitle">문장 등록</span>
+            <button class="btn btn-ghost btn-sm" id="cancelEditBtn" type="button" hidden>취소</button>
+          </div>
+          <div class="card-body">
+            <form id="sentenceForm">
+              <div class="form-row">
+                <label class="field">
+                  <span class="field-label">원문</span>
+                  <input id="originalInput" autocomplete="off" required placeholder="When the premise shifts…">
+                </label>
+                <label class="field">
+                  <span class="field-label">해석</span>
+                  <input id="translationInput" autocomplete="off" required placeholder="전제가 바뀌면…">
+                </label>
+                <label class="field">
+                  <span class="field-label">난이도</span>
+                  <select id="difficultyInput">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                  </select>
+                </label>
+                <div class="field" style="justify-content:flex-end;">
+                  <button class="btn btn-primary" id="saveBtn" type="submit">등록</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">일괄 등록</span>
+            <span class="card-note">한 줄 = 한 문장</span>
+          </div>
+          <div class="card-body">
+            <div class="stack" style="gap:10px;">
+              <textarea id="bulkInput" placeholder="원문 | 해석 | 난이도&#10;원문[TAB]해석[TAB]난이도&#10;난이도 생략 시 2로 저장됩니다."></textarea>
+              <div class="row">
+                <button class="btn btn-primary" id="bulkAddBtn" type="button">일괄 등록</button>
+                <button class="btn btn-secondary" id="sampleBtn" type="button">샘플 넣기</button>
+              </div>
+              <p class="help-text">구분자: 탭 또는 <code>|</code> — 예) <strong>원문 | 해석 | 3</strong></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">문장 목록</span>
+            <span class="card-note" id="listCount">0개</span>
+          </div>
+          <div class="card-body">
+            <div class="list-toolbar">
+              <div class="search-wrap">
+                <span class="search-icon">⌕</span>
+                <input id="searchInput" placeholder="검색">
+              </div>
+              <select id="listDifficultyFilter">
+                <option value="all">전체 난이도</option>
+                <option value="1">난이도 1</option>
+                <option value="2">난이도 2</option>
+                <option value="3">난이도 3</option>
+                <option value="4">난이도 4</option>
+              </select>
+              <select id="listFavoriteFilter">
+                <option value="all">전체</option>
+                <option value="fav">★만</option>
+                <option value="plain">★ 제외</option>
+              </select>
+            </div>
+            <div class="sentence-list" id="sentenceList"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <div class="card-head"><span class="card-title">통계</span></div>
+          <div class="card-body sm">
+            <div id="statsManage"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">복습 추출</span></div>
+          <div class="card-body sm">
+            <form class="stack" style="gap:14px;" id="extractFormManage">
+              <label class="field">
+                <span class="field-label">문장 수</span>
+                <input id="extractCountManage" type="number" min="1" max="100" value="10">
+              </label>
+              <div class="field">
+                <span class="field-label">난이도</span>
+                <div class="chip-row" id="difficultyChecksManage">
+                  <label class="chip"><input type="checkbox" value="1" checked>1</label>
+                  <label class="chip"><input type="checkbox" value="2" checked>2</label>
+                  <label class="chip"><input type="checkbox" value="3" checked>3</label>
+                  <label class="chip"><input type="checkbox" value="4" checked>4</label>
+                </div>
+              </div>
+              <label class="field">
+                <span class="field-label">즐겨찾기</span>
+                <select id="extractFavoriteManage">
+                  <option value="all">전체</option>
+                  <option value="fav">★만</option>
+                  <option value="plain">★ 제외</option>
+                </select>
+              </label>
+              <button class="btn btn-primary" type="submit">복습 시작 →</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">GitHub 동기화</span></div>
+          <div class="card-body sm">
+            <div class="stack" style="gap:12px;">
+              <label class="field">
+                <span class="field-label">Gist ID</span>
+                <input id="syncGistId" autocomplete="off" placeholder="처음이면 비워두고 새 Gist 만들기">
+              </label>
+              <label class="field">
+                <span class="field-label">GitHub Token</span>
+                <input id="syncToken" type="password" autocomplete="off" placeholder="gist 권한 토큰">
+              </label>
+              <label class="field">
+                <span class="field-label">파일명</span>
+                <input id="syncFileName" autocomplete="off" value="sentences.json">
+              </label>
+              <div class="sync-status" id="syncStatus">설정을 저장한 뒤 동기화할 수 있습니다.</div>
+              <div class="row">
+                <button class="btn btn-secondary btn-sm" id="saveSyncBtn" type="button">설정 저장</button>
+                <button class="btn btn-secondary btn-sm" id="createGistBtn" type="button">새 Gist 만들기</button>
+              </div>
+              <div class="row">
+                <button class="btn btn-primary btn-sm" id="mergeSyncBtn" type="button">동기화</button>
+                <button class="btn btn-secondary btn-sm" id="pullSyncBtn" type="button">내려받기</button>
+                <button class="btn btn-secondary btn-sm" id="pushSyncBtn" type="button">올리기</button>
+              </div>
+              <p class="help-text">토큰은 이 기기의 브라우저에만 저장됩니다. GitHub에서 <strong>gist</strong> 권한만 가진 토큰을 만들어 넣으세요.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 복습 탭 -->
+  <section class="tab-section" id="reviewSection">
+    <div class="review-col">
+      <div class="review-stage" id="reviewStage">
+        <div class="empty">관리 탭의 추출 설정에서 복습을 시작하세요.</div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <div class="card-head"><span class="card-title">통계</span></div>
+          <div class="card-body sm">
+            <div id="statsReview"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  const STORAGE_KEY = "sentence-chunk-trainer:v1";
+  const SYNC_KEY = "sentence-chunk-trainer:github-sync:v1";
+
+  const els = {
+    form: document.querySelector("#sentenceForm"),
+    formTitle: document.querySelector("#formTitle"),
+    original: document.querySelector("#originalInput"),
+    translation: document.querySelector("#translationInput"),
+    difficulty: document.querySelector("#difficultyInput"),
+    saveBtn: document.querySelector("#saveBtn"),
+    cancelEditBtn: document.querySelector("#cancelEditBtn"),
+    bulkInput: document.querySelector("#bulkInput"),
+    bulkAddBtn: document.querySelector("#bulkAddBtn"),
+    sampleBtn: document.querySelector("#sampleBtn"),
+    search: document.querySelector("#searchInput"),
+    listDifficulty: document.querySelector("#listDifficultyFilter"),
+    listFavorite: document.querySelector("#listFavoriteFilter"),
+    list: document.querySelector("#sentenceList"),
+    listCount: document.querySelector("#listCount"),
+    statsManage: document.querySelector("#statsManage"),
+    statsReview: document.querySelector("#statsReview"),
+    extractFormManage: document.querySelector("#extractFormManage"),
+    extractCountManage: document.querySelector("#extractCountManage"),
+    extractFavoriteManage: document.querySelector("#extractFavoriteManage"),
+    difficultyChecksManage: document.querySelector("#difficultyChecksManage"),
+    reviewStage: document.querySelector("#reviewStage"),
+    exportBtn: document.querySelector("#exportBtn"),
+    importBtn: document.querySelector("#importBtn"),
+    importFile: document.querySelector("#importFile"),
+    syncGistId: document.querySelector("#syncGistId"),
+    syncToken: document.querySelector("#syncToken"),
+    syncFileName: document.querySelector("#syncFileName"),
+    syncStatus: document.querySelector("#syncStatus"),
+    saveSyncBtn: document.querySelector("#saveSyncBtn"),
+    createGistBtn: document.querySelector("#createGistBtn"),
+    mergeSyncBtn: document.querySelector("#mergeSyncBtn"),
+    pullSyncBtn: document.querySelector("#pullSyncBtn"),
+    pushSyncBtn: document.querySelector("#pushSyncBtn"),
+  };
+
+  let sentences = loadSentences();
+  let editingId = null;
+  let reviewQueue = [];
+  let reviewIndex = 0;
+  let showTranslation = false;
+  let lastExtractSettings = null;
+  let syncSettings = loadSyncSettings();
+
+  // ── Tabs ──
+  const tabBtns = document.querySelectorAll(".tab-btn");
+  const tabSections = document.querySelectorAll(".tab-section");
+  function switchTab(name) {
+    tabBtns.forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+    tabSections.forEach(s => s.classList.toggle("active", s.id === name + "Section"));
+  }
+  tabBtns.forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+
+  // ── Data ──
+  function uid() {
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  function loadSentences() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed.map(normalizeSentence).filter(Boolean) : [];
+    } catch { return []; }
+  }
+
+  function normalizeSentence(item) {
+    if (!item || !item.original || !item.translation) return null;
+    const difficulty = Number(item.difficulty);
+    return {
+      id: item.id || uid(),
+      original: String(item.original).trim(),
+      translation: String(item.translation).trim(),
+      difficulty: [1,2,3,4].includes(difficulty) ? difficulty : 2,
+      favorite: Boolean(item.favorite),
+      reviewCount: Math.max(0, Number(item.reviewCount) || 0),
+      createdAt: item.createdAt || new Date().toISOString(),
+      updatedAt: item.updatedAt || item.createdAt || new Date().toISOString(),
+      lastReviewedAt: item.lastReviewedAt || null,
+    };
+  }
+
+  function saveSentences() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sentences));
+  }
+
+  function loadSyncSettings() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(SYNC_KEY) || "{}");
+      return {
+        gistId: parsed.gistId || "",
+        token: parsed.token || "",
+        fileName: parsed.fileName || "sentences.json",
+      };
+    } catch {
+      return { gistId: "", token: "", fileName: "sentences.json" };
+    }
+  }
+
+  function saveSyncSettings() {
+    syncSettings = {
+      gistId: els.syncGistId.value.trim(),
+      token: els.syncToken.value.trim(),
+      fileName: els.syncFileName.value.trim() || "sentences.json",
+    };
+    localStorage.setItem(SYNC_KEY, JSON.stringify(syncSettings));
+    setSyncStatus(syncSettings.gistId ? "설정이 저장되었습니다." : "토큰이 저장되었습니다. 새 Gist를 만들거나 Gist ID를 입력하세요.", "ok");
+  }
+
+  function hydrateSyncSettings() {
+    els.syncGistId.value = syncSettings.gistId;
+    els.syncToken.value = syncSettings.token;
+    els.syncFileName.value = syncSettings.fileName;
+  }
+
+  function setSyncStatus(message, tone = "") {
+    els.syncStatus.textContent = message;
+    els.syncStatus.className = `sync-status ${tone}`.trim();
+  }
+
+  function formatDate(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    const now = new Date();
+    const opts = d.getFullYear() !== now.getFullYear()
+      ? { year: 'numeric', month: 'long', day: 'numeric' }
+      : { month: 'long', day: 'numeric' };
+    return d.toLocaleDateString('ko-KR', opts);
+  }
+
+  function escapeHtml(v) {
+    return String(v)
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+
+  // ── Render ──
+  function renderAll() {
+    renderList();
+    renderStats();
+    renderReview();
+  }
+
+  function getVisibleSentences() {
+    const keyword = els.search.value.trim().toLowerCase();
+    const difficulty = els.listDifficulty.value;
+    const favorite = els.listFavorite.value;
+    return sentences
+      .filter(i => difficulty === "all" || String(i.difficulty) === difficulty)
+      .filter(i => favorite === "all" || (favorite === "fav" ? i.favorite : !i.favorite))
+      .filter(i => !keyword || `${i.original} ${i.translation}`.toLowerCase().includes(keyword))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }
+
+  function renderList() {
+    const visible = getVisibleSentences();
+    els.listCount.textContent = `${visible.length}개`;
+    if (!visible.length) {
+      els.list.innerHTML = `<div class="empty">조건에 맞는 문장이 없습니다.</div>`;
+      return;
+    }
+    els.list.innerHTML = visible.map(item => `
+      <article class="s-card" data-id="${item.id}">
+        <div class="s-body">
+          <p class="s-original">${escapeHtml(item.original)}</p>
+          <p class="s-translation">${escapeHtml(item.translation)}</p>
+          <div class="s-meta">
+            <span class="pill pill-accent">Lv.${item.difficulty}</span>
+            <span class="pill">복습 ${item.reviewCount}회</span>
+            ${item.favorite ? `<span class="pill">★</span>` : ""}
+          </div>
+          <div class="s-dates">
+            <span>등록 ${formatDate(item.createdAt)}</span>
+            <span class="s-dates-sep">·</span>
+            <span>최종 복습 ${formatDate(item.lastReviewedAt) ?? '없음'}</span>
+          </div>
+        </div>
+        <div class="s-actions">
+          <button class="btn-icon ${item.favorite ? "star-on" : ""}" data-action="favorite" title="즐겨찾기" type="button">★</button>
+          <button class="btn-icon" data-action="edit" title="수정" type="button">✎</button>
+          <button class="btn-icon del" data-action="delete" title="삭제" type="button">✕</button>
+        </div>
+      </article>
+    `).join("");
+  }
+
+  function renderStats() {
+    const total = sentences.length;
+    const unreviewed = sentences.filter(i => i.reviewCount === 0).length;
+    const favorites = sentences.filter(i => i.favorite).length;
+    const average = total
+      ? (sentences.reduce((s, i) => s + i.reviewCount, 0) / total).toFixed(1)
+      : "0.0";
+    const byDiff = [1,2,3,4].map(lv => ({
+      lv,
+      value: sentences.filter(i => i.difficulty === lv).length
+    }));
+    const maxDiff = Math.max(...byDiff.map(d => d.value), 1);
+
+    const mainHtml = [
+      { label: "전체", value: total },
+      { label: "미복습", value: unreviewed },
+      { label: "즐겨찾기", value: favorites },
+      { label: "평균복습", value: average },
+    ].map(s => `<div class="stat"><strong>${s.value}</strong><span>${s.label}</span></div>`).join("");
+
+    const diffHtml = byDiff.map(d => `
+      <div class="diff-row">
+        <span class="diff-level">${d.lv}</span>
+        <div class="diff-track"><div class="diff-fill" style="width:${Math.round(d.value / maxDiff * 100)}%"></div></div>
+        <span class="diff-count">${d.value}</span>
+      </div>
+    `).join("");
+
+    const html = `
+      <div class="stats-grid">${mainHtml}</div>
+      <div class="stats-divider">
+        <span class="stats-divider-label">난이도 분포</span>
+        <div class="stats-divider-line"></div>
+      </div>
+      <div class="diff-rows">${diffHtml}</div>
+    `;
+    els.statsManage.innerHTML = html;
+    els.statsReview.innerHTML = html;
+  }
+
+  function resetForm() {
+    editingId = null;
+    els.form.reset();
+    els.difficulty.value = "1";
+    els.formTitle.textContent = "문장 등록";
+    els.saveBtn.textContent = "등록";
+    els.cancelEditBtn.hidden = true;
+  }
+
+  function upsertSentence(event) {
+    event.preventDefault();
+    const original = els.original.value.trim();
+    const translation = els.translation.value.trim();
+    const difficulty = Number(els.difficulty.value);
+    if (!original || !translation) return;
+    if (editingId) {
+      sentences = sentences.map(item => item.id === editingId
+        ? { ...item, original, translation, difficulty, updatedAt: new Date().toISOString() }
+        : item
+      );
+    } else {
+      sentences.unshift({
+        id: uid(), original, translation, difficulty,
+        favorite: false, reviewCount: 0,
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      });
+    }
+    saveSentences();
+    resetForm();
+    renderAll();
+  }
+
+  function parseBulkLine(line) {
+    const delimiter = line.includes("\t") ? "\t" : "|";
+    const parts = line.split(delimiter).map(p => p.trim()).filter(Boolean);
+    if (parts.length < 2) return null;
+    const difficulty = Number(parts[2] || 2);
+    return normalizeSentence({
+      original: parts[0], translation: parts[1],
+      difficulty: [1,2,3,4].includes(difficulty) ? difficulty : 2,
+      reviewCount: 0, favorite: false,
+    });
+  }
+
+  function addBulkSentences() {
+    const rows = els.bulkInput.value
+      .split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+      .map(parseBulkLine).filter(Boolean);
+    if (!rows.length) { alert("등록할 문장을 찾지 못했습니다."); return; }
+    const ts = new Date().toISOString();
+    sentences = [...rows.map(i => ({ ...i, createdAt: ts, updatedAt: ts })), ...sentences];
+    els.bulkInput.value = "";
+    saveSentences();
+    renderAll();
+  }
+
+  function handleListClick(event) {
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+    const itemEl = event.target.closest(".s-card");
+    const id = itemEl?.dataset.id;
+    const item = sentences.find(e => e.id === id);
+    if (!item) return;
+
+    if (button.dataset.action === "favorite") {
+      item.favorite = !item.favorite;
+      item.updatedAt = new Date().toISOString();
+    }
+    if (button.dataset.action === "edit") {
+      editingId = item.id;
+      els.original.value = item.original;
+      els.translation.value = item.translation;
+      els.difficulty.value = String(item.difficulty);
+      els.formTitle.textContent = "문장 수정";
+      els.saveBtn.textContent = "저장";
+      els.cancelEditBtn.hidden = false;
+      els.original.focus();
+      return;
+    }
+    if (button.dataset.action === "delete") {
+      if (!confirm("이 문장을 삭제할까요?")) return;
+      sentences = sentences.filter(e => e.id !== id);
+      reviewQueue = reviewQueue.filter(eid => eid !== id);
+      if (reviewIndex >= reviewQueue.length) reviewIndex = Math.max(0, reviewQueue.length - 1);
+    }
+    saveSentences();
+    renderAll();
+  }
+
+  function selectedDifficultiesFrom(container) {
+    return [...container.querySelectorAll("input:checked")].map(i => Number(i.value));
+  }
+
+  function shuffledByReviewCount(candidates) {
+    return candidates
+      .map(item => ({ item, r: Math.random() }))
+      .sort((a, b) => (a.item.reviewCount - b.item.reviewCount) || (a.r - b.r))
+      .map(e => e.item);
+  }
+
+  function startReview(countEl, diffChecksEl, favEl, goToReviewTab) {
+    const count = Math.max(1, Number(countEl.value) || 1);
+    const difficulties = selectedDifficultiesFrom(diffChecksEl);
+    const favorite = favEl.value;
+    lastExtractSettings = { countEl, diffChecksEl, favEl };
+
+    const candidates = sentences
+      .filter(i => difficulties.includes(i.difficulty))
+      .filter(i => favorite === "all" || (favorite === "fav" ? i.favorite : !i.favorite));
+
+    reviewQueue = shuffledByReviewCount(candidates).slice(0, count).map(i => i.id);
+    reviewIndex = 0;
+    showTranslation = false;
+    if (goToReviewTab) switchTab("review");
+    renderReview();
+  }
+
+  function currentReviewItem() {
+    return sentences.find(i => i.id === reviewQueue[reviewIndex]) || null;
+  }
+
+  function renderReview() {
+    const stage = els.reviewStage;
+    if (!reviewQueue.length) {
+      stage.innerHTML = `<div class="empty">관리 탭의 추출 설정에서 복습을 시작하세요.</div>`;
+      return;
+    }
+    if (reviewIndex >= reviewQueue.length) {
+      stage.innerHTML = `
+        <div class="review-done">
+          <div class="review-done-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c96442" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="review-done-title">복습 완료</div>
+          <p class="review-done-sub">이번 묶음을 모두 마쳤습니다.</p>
+          <button class="btn btn-secondary" id="reviewAgainBtn" type="button" style="margin-top:12px;">같은 조건으로 다시 추출</button>
+        </div>
+      `;
+      return;
+    }
+
+    const item = currentReviewItem();
+    if (!item) { reviewIndex++; renderReview(); return; }
+
+    const pct = Math.round((reviewIndex / reviewQueue.length) * 100);
+    stage.innerHTML = `
+      <div class="review-top">
+        <span class="review-count">${reviewIndex + 1} / ${reviewQueue.length}</span>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <span class="diff-badge">난이도 ${item.difficulty}${item.favorite ? " · ★" : ""}</span>
+      </div>
+      <div class="review-sentence">${escapeHtml(item.original)}</div>
+      <div class="review-answer ${showTranslation ? "shown" : "hidden"}">
+        ${showTranslation ? escapeHtml(item.translation) : "해석 확인 버튼을 누르세요"}
+      </div>
+      <div class="review-actions">
+        <button class="btn btn-secondary" id="showAnswerBtn" type="button" ${showTranslation ? "disabled" : ""}>해석 확인</button>
+        <button class="btn btn-primary" id="completeReviewBtn" type="button">복습 완료 ✓</button>
+        <button class="btn btn-warn" id="skipReviewBtn" type="button">넘기기</button>
+      </div>
+    `;
+  }
+
+  function completeReview() {
+    const item = currentReviewItem();
+    if (item) {
+      item.reviewCount++;
+      const now = new Date().toISOString();
+      item.updatedAt = now;
+      item.lastReviewedAt = now;
+      saveSentences();
+    }
+    reviewIndex++;
+    showTranslation = false;
+    renderAll();
+  }
+
+  function skipReview() {
+    reviewIndex++;
+    showTranslation = false;
+    renderReview();
+  }
+
+  function exportJson() {
+    const blob = new Blob([JSON.stringify(sentences, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `recall-${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function importJson(file) {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (!Array.isArray(parsed)) throw new Error();
+      const normalized = parsed.map(normalizeSentence).filter(Boolean);
+      const ok = confirm(`${normalized.length}개를 가져옵니다. 기존 문장 뒤에 추가할까요? 취소하면 교체합니다.`);
+      sentences = ok ? [...normalized, ...sentences] : normalized;
+      saveSentences();
+      reviewQueue = []; reviewIndex = 0; showTranslation = false;
+      renderAll();
+    } catch { alert("JSON 파일을 읽지 못했습니다."); }
+    finally { els.importFile.value = ""; }
+  }
+
+  function insertSamples() {
+    els.bulkInput.value = [
+      "The argument holds only if its hidden assumption is true. | 그 주장은 숨은 전제가 참일 때에만 성립한다. | 2",
+      "Having conceded the point, she shifted the discussion to its consequences. | 그 점을 인정한 뒤, 그녀는 논의를 그 결과로 옮겼다. | 3",
+      "What appears to be a contradiction is often a difference in scope. | 모순처럼 보이는 것은 흔히 범위의 차이다. | 2",
+      "No sooner had the policy changed than the market reacted. | 정책이 바뀌자마자 시장이 반응했다. | 4"
+    ].join("\n");
+    els.bulkInput.focus();
+  }
+
+  function syncPayload() {
+    return {
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      sentences,
+    };
+  }
+
+  function requireSyncSettings(needsGist = true) {
+    saveSyncSettings();
+    if (!syncSettings.token) throw new Error("GitHub Token을 입력하세요.");
+    if (needsGist && !syncSettings.gistId) throw new Error("Gist ID를 입력하거나 새 Gist를 먼저 만드세요.");
+  }
+
+  async function gistRequest(path, options = {}) {
+    const response = await fetch(`https://api.github.com${path}`, {
+      ...options,
+      headers: {
+        "Accept": "application/vnd.github+json",
+        "Authorization": `Bearer ${syncSettings.token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        ...(options.headers || {}),
+      },
+    });
+    const text = await response.text();
+    const body = text ? JSON.parse(text) : null;
+    if (!response.ok) {
+      const message = body?.message || `GitHub 요청 실패 (${response.status})`;
+      throw new Error(message);
+    }
+    return body;
+  }
+
+  async function createGist() {
+    try {
+      requireSyncSettings(false);
+      setSyncStatus("새 Gist를 만드는 중입니다...", "warn");
+      const gist = await gistRequest("/gists", {
+        method: "POST",
+        body: JSON.stringify({
+          description: "recall sentence chunk trainer data",
+          public: false,
+          files: {
+            [syncSettings.fileName]: {
+              content: JSON.stringify(syncPayload(), null, 2),
+            },
+          },
+        }),
+      });
+      syncSettings.gistId = gist.id;
+      els.syncGistId.value = gist.id;
+      localStorage.setItem(SYNC_KEY, JSON.stringify(syncSettings));
+      setSyncStatus(`새 Gist를 만들고 현재 문장 ${sentences.length}개를 올렸습니다.`, "ok");
+    } catch (error) {
+      setSyncStatus(error.message, "err");
+    }
+  }
+
+  async function readRemoteSentences() {
+    requireSyncSettings(true);
+    const gist = await gistRequest(`/gists/${encodeURIComponent(syncSettings.gistId)}`);
+    const file = gist.files?.[syncSettings.fileName];
+    if (!file?.content) throw new Error(`${syncSettings.fileName} 파일을 찾지 못했습니다.`);
+    const parsed = JSON.parse(file.content);
+    const remote = Array.isArray(parsed) ? parsed : parsed.sentences;
+    if (!Array.isArray(remote)) throw new Error("동기화 파일 형식이 올바르지 않습니다.");
+    return remote.map(normalizeSentence).filter(Boolean);
+  }
+
+  async function writeRemoteSentences() {
+    requireSyncSettings(true);
+    await gistRequest(`/gists/${encodeURIComponent(syncSettings.gistId)}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        files: {
+          [syncSettings.fileName]: {
+            content: JSON.stringify(syncPayload(), null, 2),
+          },
+        },
+      }),
+    });
+  }
+
+  function mergeSentences(localItems, remoteItems) {
+    const byId = new Map();
+    [...localItems, ...remoteItems].forEach(item => {
+      const current = byId.get(item.id);
+      if (!current) {
+        byId.set(item.id, item);
+        return;
+      }
+      const currentTime = new Date(current.updatedAt || current.createdAt || 0).getTime();
+      const nextTime = new Date(item.updatedAt || item.createdAt || 0).getTime();
+      byId.set(item.id, nextTime >= currentTime ? item : current);
+    });
+    return [...byId.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }
+
+  async function syncMerge() {
+    try {
+      setSyncStatus("GitHub와 병합 동기화 중입니다...", "warn");
+      const remote = await readRemoteSentences();
+      sentences = mergeSentences(sentences, remote);
+      saveSentences();
+      await writeRemoteSentences();
+      renderAll();
+      setSyncStatus(`동기화 완료: ${sentences.length}개 문장`, "ok");
+    } catch (error) {
+      setSyncStatus(error.message, "err");
+    }
+  }
+
+  async function syncPull() {
+    try {
+      setSyncStatus("GitHub에서 내려받는 중입니다...", "warn");
+      const remote = await readRemoteSentences();
+      if (!confirm(`GitHub의 ${remote.length}개 문장으로 이 기기의 데이터를 교체할까요?`)) {
+        setSyncStatus("내려받기를 취소했습니다.", "warn");
+        return;
+      }
+      sentences = remote;
+      saveSentences();
+      reviewQueue = []; reviewIndex = 0; showTranslation = false;
+      renderAll();
+      setSyncStatus(`내려받기 완료: ${sentences.length}개 문장`, "ok");
+    } catch (error) {
+      setSyncStatus(error.message, "err");
+    }
+  }
+
+  async function syncPush() {
+    try {
+      setSyncStatus("GitHub로 올리는 중입니다...", "warn");
+      await writeRemoteSentences();
+      setSyncStatus(`올리기 완료: ${sentences.length}개 문장`, "ok");
+    } catch (error) {
+      setSyncStatus(error.message, "err");
+    }
+  }
+
+  // ── Events ──
+  els.form.addEventListener("submit", upsertSentence);
+  els.cancelEditBtn.addEventListener("click", resetForm);
+  els.bulkAddBtn.addEventListener("click", addBulkSentences);
+  els.sampleBtn.addEventListener("click", insertSamples);
+  els.search.addEventListener("input", renderList);
+  els.listDifficulty.addEventListener("change", renderList);
+  els.listFavorite.addEventListener("change", renderList);
+  els.list.addEventListener("click", handleListClick);
+
+  els.extractFormManage.addEventListener("submit", e => {
+    e.preventDefault();
+    startReview(els.extractCountManage, els.difficultyChecksManage, els.extractFavoriteManage, true);
+  });
+
+  els.exportBtn.addEventListener("click", exportJson);
+  els.importBtn.addEventListener("click", () => els.importFile.click());
+  els.importFile.addEventListener("change", e => importJson(e.target.files[0]));
+  els.saveSyncBtn.addEventListener("click", saveSyncSettings);
+  els.createGistBtn.addEventListener("click", createGist);
+  els.mergeSyncBtn.addEventListener("click", syncMerge);
+  els.pullSyncBtn.addEventListener("click", syncPull);
+  els.pushSyncBtn.addEventListener("click", syncPush);
+
+  els.reviewStage.addEventListener("click", e => {
+    if (e.target.id === "showAnswerBtn") { showTranslation = true; renderReview(); }
+    if (e.target.id === "completeReviewBtn") completeReview();
+    if (e.target.id === "skipReviewBtn") skipReview();
+    if (e.target.id === "reviewAgainBtn" && lastExtractSettings) {
+      const { countEl, diffChecksEl, favEl } = lastExtractSettings;
+      startReview(countEl, diffChecksEl, favEl, false);
+    }
+  });
+
+  hydrateSyncSettings();
+  renderAll();
+</script>
+</body>
+</html>

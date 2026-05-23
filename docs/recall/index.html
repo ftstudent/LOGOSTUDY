@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>recall — 문장 청킹 복습장</title>
+  <title>rechunk — 문장 청킹 복습장</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -16,10 +16,10 @@
       --ink: #1c1816;
       --ink-2: #3d3530;
       --muted: #a0908a;
-      --accent: #c96442;
-      --accent-hover: #b5573a;
-      --accent-soft: #fdf0eb;
-      --accent-border: #f2c4ae;
+      --accent: #b85f47;
+      --accent-hover: #9f4f3c;
+      --accent-soft: #fff1eb;
+      --accent-border: #efc1ad;
       --danger: #e53e3e;
       --danger-soft: #fff5f5;
       --warn-soft: #fffbeb;
@@ -53,18 +53,29 @@
       display: flex; align-items: stretch; height: 52px;
     }
     .app-logo {
-      display: flex; align-items: center; gap: 9px;
-      padding-right: 32px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 10px;
+      padding-right: 30px; flex-shrink: 0;
       text-decoration: none;
     }
-    .logo-icon { color: var(--accent); flex-shrink: 0; }
-    .logo-text {
-      font-size: 17px; font-weight: 800;
-      color: var(--ink); letter-spacing: -0.4px;
+    .logo-icon {
+      color: var(--accent);
+      flex-shrink: 0;
+      filter: drop-shadow(0 1px 0 rgba(255,255,255,.8));
     }
-    .logo-text em {
+    .logo-word {
+      display: inline-flex; align-items: baseline; gap: 1px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px; font-weight: 700;
+      color: var(--ink); letter-spacing: -0.2px;
+    }
+    .logo-word em {
       font-style: normal;
       color: var(--accent);
+    }
+    .logo-word .slash {
+      color: var(--muted);
+      margin: 0 1px;
+      font-weight: 600;
     }
     .tab-nav { display: flex; align-items: stretch; }
     .tab-btn {
@@ -366,14 +377,25 @@
 <header class="app-bar">
   <div class="app-bar-inner">
     <a class="app-logo" href="#">
+      <svg class="logo-icon" width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="2" y="4" width="8.5" height="2.4" rx="1.2" fill="currentColor" opacity="0.28"/>
+        <rect x="12.2" y="4" width="9.8" height="2.4" rx="1.2" fill="currentColor" opacity="0.18"/>
+        <rect x="2" y="10.8" width="5.9" height="2.4" rx="1.2" fill="currentColor"/>
+        <rect x="9.6" y="10.8" width="10.8" height="2.4" rx="1.2" fill="currentColor" opacity="0.62"/>
+        <rect x="2" y="17.6" width="12" height="2.4" rx="1.2" fill="currentColor" opacity="0.24"/>
+        <path d="M17.8 2.8 8.2 21.2" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-word">re<span class="slash">/</span><em>chunk</em></span>
+    </a>
+    <template id="legacyRecallLogo">
       <svg class="logo-icon" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="2" y="4" width="18" height="2.5" rx="1.25" fill="currentColor" opacity="0.25"/>
         <rect x="2" y="9.75" width="11" height="2.5" rx="1.25" fill="currentColor"/>
         <rect x="14.5" y="9.75" width="5.5" height="2.5" rx="1.25" fill="currentColor" opacity="0.2"/>
         <rect x="2" y="15.5" width="14" height="2.5" rx="1.25" fill="currentColor" opacity="0.25"/>
       </svg>
-      <span class="logo-text">re<em>call</em></span>
-    </a>
+      <span class="logo-word">re<em>call</em></span>
+    </template>
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="manage" type="button">관리</button>
       <button class="tab-btn" data-tab="review" type="button">복습</button>
@@ -985,7 +1007,7 @@
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `recall-${new Date().toISOString().slice(0,10)}.json`;
+    link.download = `rechunk-${new Date().toISOString().slice(0,10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -1056,7 +1078,7 @@
       const gist = await gistRequest("/gists", {
         method: "POST",
         body: JSON.stringify({
-          description: "recall sentence chunk trainer data",
+          description: "rechunk sentence chunk trainer data",
           public: false,
           files: {
             [syncSettings.fileName]: {

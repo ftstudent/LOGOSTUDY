@@ -685,35 +685,26 @@
           <details class="collapsible-card" id="syncDetails">
             <summary class="card-head sync-summary">
               <span class="sync-head">
-                <span class="card-title">GitHub 게시</span>
-                <span class="sync-head-status" id="syncHeadStatus">로컬 저장</span>
+                <span class="card-title">클라우드 저장</span>
+                <span class="sync-head-status" id="syncHeadStatus">연결 중</span>
               </span>
             </summary>
             <div class="card-body sm">
             <div class="stack" style="gap:12px;">
-              <label class="field">
-                <span class="field-label">저장소</span>
-                <input id="syncGistId" autocomplete="off" value="ftstudent/LOGOSTUDY">
-              </label>
-              <label class="field">
-                <span class="field-label">GitHub Token</span>
-                <input id="syncToken" type="password" autocomplete="off" placeholder="이 컴퓨터에만 저장되는 게시 권한 토큰">
-              </label>
-              <label class="field">
-                <span class="field-label">브랜치</span>
-                <input id="syncFileName" autocomplete="off" value="main">
-              </label>
-              <div class="sync-status" id="syncStatus">게시 설정을 저장하면 이 컴퓨터에서 입력한 문장이 공개 DB에 자동 반영됩니다.</div>
+              <input id="syncGistId" type="hidden" value="supabase">
+              <input id="syncToken" type="hidden" value="public">
+              <input id="syncFileName" type="hidden" value="recall">
+              <div class="sync-status" id="syncStatus">클라우드에 연결 중입니다.</div>
               <div class="row">
-                <button class="btn btn-secondary btn-sm" id="saveSyncBtn" type="button">설정 저장</button>
-                <button class="btn btn-primary btn-sm" id="createGistBtn" type="button">지금 게시</button>
+                <button class="btn btn-primary btn-sm" id="saveSyncBtn" type="button">지금 저장</button>
+                <button class="btn btn-secondary btn-sm" id="createGistBtn" type="button">새로고침</button>
               </div>
               <div class="row">
-                <button class="btn btn-secondary btn-sm" id="mergeSyncBtn" type="button">공개 DB 새로고침</button>
-                <button class="btn btn-secondary btn-sm" id="pullSyncBtn" type="button">공개 DB로 교체</button>
-                <button class="btn btn-secondary btn-sm" id="pushSyncBtn" type="button">강제 게시</button>
+                <button class="btn btn-secondary btn-sm" id="mergeSyncBtn" type="button">병합 불러오기</button>
+                <button class="btn btn-secondary btn-sm" id="pullSyncBtn" type="button">클라우드로 교체</button>
+                <button class="btn btn-secondary btn-sm" id="pushSyncBtn" type="button">강제 저장</button>
               </div>
-              <p class="help-text">토큰은 이 컴퓨터 브라우저에만 저장됩니다. 폰과 아이패드는 설정 없이 공개 DB를 읽기만 하면 됩니다.</p>
+              <p class="help-text">logostudy와 같은 클라우드 저장 방식입니다. 별도 토큰 입력 없이 모든 기기에서 같은 데이터를 불러오고 저장합니다.</p>
             </div>
             </div>
           </details>
@@ -728,7 +719,7 @@
                 <button class="btn btn-secondary btn-sm" id="importBtn" type="button">가져오기</button>
                 <input class="file-input" id="importFile" type="file" accept="application/json">
               </div>
-              <p class="help-text">수동 백업용입니다. 여러 기기에서 보기만 할 데이터는 GitHub 게시로 공개 DB에 반영됩니다.</p>
+              <p class="help-text">수동 백업용입니다. 평소에는 클라우드 저장이 자동으로 처리합니다.</p>
             </div>
           </div>
         </div>
@@ -755,7 +746,16 @@
 
 </main>
 
-<script>
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  const SUPABASE_URL = "https://peblghbzugqajklsuoip.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_J8n4rbxSZAG755BMSnPrlQ_4LgqhwpC";
+  const CLOUD_TABLE = "study_public_state";
+  const CLOUD_ROW_ID = "default";
+  const CLOUD_DATA_KEY = "recall";
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
   const STORAGE_KEY = "sentence-chunk-trainer:v1";
   const SYNC_KEY = "sentence-chunk-trainer:github-sync:v1";
   const REVIEW_HISTORY_KEY = "sentence-chunk-trainer:review-history:v1";
@@ -839,6 +839,7 @@
   let autoSyncTimer = null;
   let syncInFlight = false;
   let syncQueued = false;
+  let cloudLoaded = false;
 
   // ── Tabs ──
   const tabBtns = document.querySelectorAll(".tab-btn");
@@ -972,17 +973,7 @@
   }
 
   function loadSyncSettings() {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(SYNC_KEY) || "{}");
-      const savedRepo = parsed.repo || (String(parsed.gistId || "").includes("/") ? parsed.gistId : "");
-      return {
-        gistId: savedRepo || "ftstudent/LOGOSTUDY",
-        token: parsed.token || "",
-        fileName: parsed.branch || (parsed.fileName === "sentences.json" ? "" : parsed.fileName) || "main",
-      };
-    } catch {
-      return { gistId: "ftstudent/LOGOSTUDY", token: "", fileName: "main" };
-    }
+    return { gistId: "supabase", token: "public", fileName: CLOUD_DATA_KEY };
   }
 
   function readSyncSettingsFields() {
@@ -996,39 +987,31 @@
   function saveSyncSettings({ startSync = true } = {}) {
     syncSettings = readSyncSettingsFields();
     localStorage.setItem(SYNC_KEY, JSON.stringify(syncSettings));
-    if (hasSyncSettings() && startSync) {
-      setSyncStatus("게시 설정이 저장되었습니다. 이 컴퓨터에서 자동 게시됩니다.", "ok");
-    } else {
-      const message = !syncSettings.token
-        ? "GitHub Token을 입력하면 이 컴퓨터에서 자동 게시됩니다."
-        : "저장소와 브랜치를 확인하세요.";
-      setSyncStatus(message, "warn");
-    }
+    if (startSync) cloudSaveNow();
   }
 
   function hydrateSyncSettings() {
     els.syncGistId.value = syncSettings.gistId;
     els.syncToken.value = syncSettings.token;
     els.syncFileName.value = syncSettings.fileName;
-    setSyncStatus(hasSyncSettings() ? "자동 게시 준비됨" : "공개 DB를 읽는 중입니다. 이 컴퓨터에서 게시하려면 토큰을 입력하세요.", hasSyncSettings() ? "ok" : "");
+    setSyncStatus("클라우드 연결 중입니다.", "warn");
   }
 
   function setSyncStatus(message, tone = "") {
     els.syncStatus.textContent = message;
     els.syncStatus.className = `sync-status ${tone}`.trim();
-    els.syncHeadStatus.textContent = tone === "err" ? "확인 필요" : (hasSyncSettings() ? "자동 게시" : "읽기 전용");
+    els.syncHeadStatus.textContent = tone === "err" ? "확인 필요" : (cloudLoaded ? "클라우드" : "연결 중");
     els.syncHeadStatus.className = `sync-head-status ${tone}`.trim();
   }
 
   function hasSyncSettings() {
-    return Boolean(syncSettings.gistId && syncSettings.gistId.includes("/") && syncSettings.token && syncSettings.fileName);
+    return true;
   }
 
   function queueAutoSync() {
-    if (!hasSyncSettings()) return;
     clearTimeout(autoSyncTimer);
-    setSyncStatus("변경사항을 공개 DB에 자동 게시할 준비 중입니다...", "warn");
-    autoSyncTimer = setTimeout(() => syncPush({ auto: true }), AUTO_SYNC_DELAY);
+    setSyncStatus("변경사항을 클라우드에 저장할 준비 중입니다...", "warn");
+    autoSyncTimer = setTimeout(() => cloudSaveNow({ auto: true }), AUTO_SYNC_DELAY);
   }
 
   function formatDate(iso) {
@@ -1476,11 +1459,81 @@
     }
   }
 
+  async function loadCloudData({ replace = false } = {}) {
+    try {
+      setSyncStatus("클라우드에서 불러오는 중입니다...", "warn");
+      const { data, error } = await supabase
+        .from(CLOUD_TABLE)
+        .select("data,updated_at")
+        .eq("id", CLOUD_ROW_ID)
+        .maybeSingle();
+      if (error) throw error;
+
+      if (data?.data?.[CLOUD_DATA_KEY]) {
+        const remote = parseDataPayload(data.data[CLOUD_DATA_KEY]);
+        if (replace) {
+          sentences = remote.sentences;
+          reviewHistory = remote.reviewHistory;
+          deletedItems = remote.deletedItems;
+        } else {
+          deletedItems = mergeDeletedItems(deletedItems, remote.deletedItems);
+          sentences = mergeSentences(sentences, remote.sentences, deletedItems);
+          reviewHistory = mergeReviewHistory(reviewHistory, remote.reviewHistory);
+        }
+        saveSentences();
+        saveReviewHistory();
+        saveDeletedItems();
+        renderAll();
+        cloudLoaded = true;
+        setSyncStatus(data.updated_at ? `클라우드 동기화 완료 · ${new Date(data.updated_at).toLocaleTimeString("ko-KR")}` : "클라우드 동기화 완료", "ok");
+        return true;
+      }
+
+      cloudLoaded = true;
+      setSyncStatus("클라우드에 recall 데이터가 없어 현재 기기 데이터로 시작합니다.", "warn");
+      await cloudSaveNow();
+      return true;
+    } catch (error) {
+      setSyncStatus(`클라우드 불러오기 실패: ${error.message}`, "err");
+      return false;
+    }
+  }
+
+  async function cloudSaveNow({ auto = false } = {}) {
+    try {
+      setSyncStatus(auto ? "클라우드에 자동 저장 중입니다..." : "클라우드에 저장 중입니다...", "warn");
+      const { data: current, error: loadError } = await supabase
+        .from(CLOUD_TABLE)
+        .select("data")
+        .eq("id", CLOUD_ROW_ID)
+        .maybeSingle();
+      if (loadError) throw loadError;
+      const nextData = {
+        ...(current?.data || {}),
+        [CLOUD_DATA_KEY]: syncPayload(),
+      };
+      const { error } = await supabase
+        .from(CLOUD_TABLE)
+        .update({
+          data: nextData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", CLOUD_ROW_ID);
+      if (error) throw error;
+      cloudLoaded = true;
+      setSyncStatus(`${auto ? "자동 저장" : "저장"} 완료 · ${new Date().toLocaleTimeString("ko-KR")}`, "ok");
+      return true;
+    } catch (error) {
+      setSyncStatus(`클라우드 저장 실패: ${error.message}`, "err");
+      return false;
+    }
+  }
+
   function requireSyncSettings(needsGist = true) {
     syncSettings = readSyncSettingsFields();
     localStorage.setItem(SYNC_KEY, JSON.stringify(syncSettings));
-    if (!syncSettings.token) throw new Error("GitHub Token을 입력하세요.");
-    if (needsGist && !syncSettings.gistId.includes("/")) throw new Error("저장소를 owner/repo 형식으로 입력하세요.");
+    if (!syncSettings.token) throw new Error("클라우드 설정을 확인하세요.");
+    if (needsGist && !syncSettings.gistId) throw new Error("클라우드 설정을 확인하세요.");
   }
 
   function repoParts() {
@@ -1677,11 +1730,13 @@
   els.exportBtn.addEventListener("click", exportJson);
   els.importBtn.addEventListener("click", () => els.importFile.click());
   els.importFile.addEventListener("change", e => importJson(e.target.files[0]));
-  els.saveSyncBtn.addEventListener("click", saveSyncSettings);
-  els.createGistBtn.addEventListener("click", createGist);
-  els.mergeSyncBtn.addEventListener("click", loadPublicData);
-  els.pullSyncBtn.addEventListener("click", syncPull);
-  els.pushSyncBtn.addEventListener("click", syncPush);
+  els.saveSyncBtn.addEventListener("click", () => cloudSaveNow());
+  els.createGistBtn.addEventListener("click", () => loadCloudData());
+  els.mergeSyncBtn.addEventListener("click", () => loadCloudData());
+  els.pullSyncBtn.addEventListener("click", () => {
+    if (confirm("클라우드 데이터로 이 기기의 데이터를 교체할까요?")) loadCloudData({ replace: true });
+  });
+  els.pushSyncBtn.addEventListener("click", () => cloudSaveNow());
 
   els.reviewStage.addEventListener("click", e => {
     if (e.target.id === "showAnswerBtn") { showTranslation = true; renderReview(); }
@@ -1695,7 +1750,7 @@
 
   hydrateSyncSettings();
   renderAll();
-  loadPublicData();
+  loadCloudData();
 </script>
 </body>
 </html>

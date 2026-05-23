@@ -274,6 +274,10 @@
       background: var(--surface-2); color: var(--muted); border: 1px solid var(--border);
     }
     .pill-accent { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-border); }
+    .pill-level-1 { background: #edf7ef; color: #3f7d52; border-color: #c5dfcc; }
+    .pill-level-2 { background: #eef5fb; color: #45759a; border-color: #c6dcec; }
+    .pill-level-3 { background: #f4eff8; color: #75609a; border-color: #d9cbe7; }
+    .pill-level-4 { background: #fff1eb; color: #b85f47; border-color: #efc1ad; }
     .s-actions { display: flex; gap: 4px; align-items: flex-start; flex-shrink: 0; }
 
     /* ── Stats ── */
@@ -300,6 +304,10 @@
       border-radius: 99px; overflow: hidden;
     }
     .diff-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width .4s ease; }
+    .diff-fill.level-1 { background: #6fa77b; }
+    .diff-fill.level-2 { background: #6d9dc5; }
+    .diff-fill.level-3 { background: #8f79b8; }
+    .diff-fill.level-4 { background: #b85f47; }
     .diff-count { font-size: 12px; font-weight: 700; color: var(--ink-2); width: 18px; text-align: right; flex-shrink: 0; }
     .review-chart {
       display: grid;
@@ -369,6 +377,10 @@
       border-color: var(--accent-border);
       color: var(--accent);
     }
+    .chip-level-1:has(input:checked) { background: #edf7ef; border-color: #c5dfcc; color: #3f7d52; }
+    .chip-level-2:has(input:checked) { background: #eef5fb; border-color: #c6dcec; color: #45759a; }
+    .chip-level-3:has(input:checked) { background: #f4eff8; border-color: #d9cbe7; color: #75609a; }
+    .chip-level-4:has(input:checked) { background: #fff1eb; border-color: #efc1ad; color: #b85f47; }
 
     /* ── Review stage ── */
     .review-stage {
@@ -662,10 +674,10 @@
               <div class="field">
                 <span class="field-label">난이도</span>
                 <div class="chip-row" id="difficultyChecksManage">
-                  <label class="chip"><input type="checkbox" value="1" checked>1</label>
-                  <label class="chip"><input type="checkbox" value="2" checked>2</label>
-                  <label class="chip"><input type="checkbox" value="3" checked>3</label>
-                  <label class="chip"><input type="checkbox" value="4" checked>4</label>
+                  <label class="chip chip-level-1"><input type="checkbox" value="1" checked>1</label>
+                  <label class="chip chip-level-2"><input type="checkbox" value="2" checked>2</label>
+                  <label class="chip chip-level-3"><input type="checkbox" value="3" checked>3</label>
+                  <label class="chip chip-level-4"><input type="checkbox" value="4" checked>4</label>
                 </div>
               </div>
               <label class="field">
@@ -1064,7 +1076,7 @@
           <p class="s-translation">${escapeHtml(item.translation)}</p>
           <div class="s-meta">
             <span class="pill pill-accent">${languageShort(item.language)}</span>
-            <span class="pill pill-accent">Lv.${item.difficulty}</span>
+            <span class="pill pill-level-${item.difficulty}">Lv.${item.difficulty}</span>
             <span class="pill">복습 ${item.reviewCount}회</span>
             ${item.favorite ? `<span class="pill">★</span>` : ""}
           </div>
@@ -1130,7 +1142,7 @@
     const diffHtml = byDiff.map(d => `
       <div class="diff-row">
         <span class="diff-level">${d.lv}</span>
-        <div class="diff-track"><div class="diff-fill" style="width:${Math.round(d.value / maxDiff * 100)}%"></div></div>
+        <div class="diff-track"><div class="diff-fill level-${d.lv}" style="width:${Math.round(d.value / maxDiff * 100)}%"></div></div>
         <span class="diff-count">${d.value}</span>
       </div>
     `).join("");

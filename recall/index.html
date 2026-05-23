@@ -238,12 +238,12 @@
     .s-actions { display: flex; gap: 4px; align-items: flex-start; flex-shrink: 0; }
 
     /* ── Stats ── */
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
     .stat {
       background: var(--surface-2); border-radius: var(--r);
-      padding: 11px 13px;
+      padding: 10px 9px;
     }
-    .stat strong { display: block; font-size: 20px; font-weight: 800; line-height: 1.1; color: var(--ink); }
+    .stat strong { display: block; font-size: 19px; font-weight: 800; line-height: 1.1; color: var(--ink); }
     .stat span { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
 
     .stats-divider {
@@ -262,6 +262,57 @@
     }
     .diff-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width .4s ease; }
     .diff-count { font-size: 12px; font-weight: 700; color: var(--ink-2); width: 18px; text-align: right; flex-shrink: 0; }
+    .review-chart {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 7px;
+      align-items: end;
+      min-height: 122px;
+      margin-top: 5px;
+    }
+    .chart-bar-wrap {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: 22px 74px 18px;
+      gap: 5px;
+      align-items: end;
+      text-align: center;
+    }
+    .chart-value {
+      color: var(--ink-2);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .chart-track {
+      height: 74px;
+      display: flex;
+      align-items: end;
+      justify-content: center;
+    }
+    .chart-bar {
+      width: 100%;
+      max-width: 28px;
+      min-height: 3px;
+      border-radius: 9px 9px 2px 2px;
+      background: linear-gradient(180deg, #d78368 0%, #b85f47 58%, #8f4638 100%);
+      box-shadow: 0 7px 14px rgba(184, 95, 71, .18);
+      opacity: .96;
+    }
+    .chart-bar.is-empty {
+      height: 3px !important;
+      background: var(--border);
+      box-shadow: none;
+      opacity: 1;
+    }
+    .chart-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
 
     /* ── Chips ── */
     .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -646,6 +697,7 @@
 <script>
   const STORAGE_KEY = "sentence-chunk-trainer:v1";
   const SYNC_KEY = "sentence-chunk-trainer:github-sync:v1";
+  const REVIEW_HISTORY_KEY = "sentence-chunk-trainer:review-history:v1";
 
   const LANGUAGES = [
     { code: "en", label: "영어", short: "EN", aliases: ["english", "영어"] },
@@ -715,6 +767,7 @@
   let showTranslation = false;
   let lastExtractSettings = null;
   let syncSettings = loadSyncSettings();
+  let reviewHistory = loadReviewHistory();
 
   // ── Tabs ──
   const tabBtns = document.querySelectorAll(".tab-btn");
@@ -757,6 +810,45 @@
 
   function saveSentences() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sentences));
+  }
+
+  function loadReviewHistory() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(REVIEW_HISTORY_KEY) || "{}");
+      return normalizeReviewHistory(parsed);
+    } catch {
+      return {};
+    }
+  }
+
+  function normalizeReviewHistory(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([key]) => /^\d{4}-\d{2}-\d{2}$/.test(key))
+        .map(([key, count]) => [key, Math.max(0, Number(count) || 0)])
+    );
+  }
+
+  function saveReviewHistory() {
+    localStorage.setItem(REVIEW_HISTORY_KEY, JSON.stringify(reviewHistory));
+  }
+
+  function localDateKey(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function monthDayLabel(date) {
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+  }
+
+  function bumpReviewHistory(date = new Date()) {
+    const key = localDateKey(date);
+    reviewHistory[key] = Math.max(0, Number(reviewHistory[key]) || 0) + 1;
+    saveReviewHistory();
   }
 
   function normalizeLanguage(value) {
@@ -880,9 +972,6 @@
     const total = sentences.length;
     const unreviewed = sentences.filter(i => i.reviewCount === 0).length;
     const favorites = sentences.filter(i => i.favorite).length;
-    const average = total
-      ? (sentences.reduce((s, i) => s + i.reviewCount, 0) / total).toFixed(1)
-      : "0.0";
     const byDiff = [1,2,3,4].map(lv => ({
       lv,
       value: sentences.filter(i => i.difficulty === lv).length
@@ -900,8 +989,28 @@
       { label: "전체", value: total },
       { label: "미복습", value: unreviewed },
       { label: "즐겨찾기", value: favorites },
-      { label: "평균복습", value: average },
     ].map(s => `<div class="stat"><strong>${s.value}</strong><span>${s.label}</span></div>`).join("");
+
+    const recentDays = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - (6 - index));
+      const key = localDateKey(date);
+      return { key, label: monthDayLabel(date), value: Math.max(0, Number(reviewHistory[key]) || 0) };
+    });
+    const maxDaily = Math.max(...recentDays.map(day => day.value), 1);
+    const chartHtml = recentDays.map(day => {
+      const height = day.value ? Math.max(8, Math.round(day.value / maxDaily * 74)) : 3;
+      return `
+        <div class="chart-bar-wrap">
+          <div class="chart-value">${day.value || ""}</div>
+          <div class="chart-track">
+            <div class="chart-bar ${day.value ? "" : "is-empty"}" style="height:${height}px"></div>
+          </div>
+          <div class="chart-label">${day.label}</div>
+        </div>
+      `;
+    }).join("");
 
     const diffHtml = byDiff.map(d => `
       <div class="diff-row">
@@ -922,6 +1031,11 @@
 
     const html = `
       <div class="stats-grid">${mainHtml}</div>
+      <div class="stats-divider">
+        <span class="stats-divider-label">최근 7일 복습</span>
+        <div class="stats-divider-line"></div>
+      </div>
+      <div class="review-chart">${chartHtml}</div>
       <div class="stats-divider">
         <span class="stats-divider-label">언어 분포</span>
         <div class="stats-divider-line"></div>
@@ -1123,6 +1237,7 @@
       item.updatedAt = now;
       item.lastReviewedAt = now;
       saveSentences();
+      bumpReviewHistory();
     }
     reviewIndex++;
     showTranslation = false;
@@ -1176,6 +1291,7 @@
       version: 1,
       updatedAt: new Date().toISOString(),
       sentences,
+      reviewHistory: normalizeReviewHistory(reviewHistory),
     };
   }
 
@@ -1229,7 +1345,7 @@
     }
   }
 
-  async function readRemoteSentences() {
+  async function readRemoteData() {
     requireSyncSettings(true);
     const gist = await gistRequest(`/gists/${encodeURIComponent(syncSettings.gistId)}`);
     const file = gist.files?.[syncSettings.fileName];
@@ -1237,7 +1353,10 @@
     const parsed = JSON.parse(file.content);
     const remote = Array.isArray(parsed) ? parsed : parsed.sentences;
     if (!Array.isArray(remote)) throw new Error("동기화 파일 형식이 올바르지 않습니다.");
-    return remote.map(normalizeSentence).filter(Boolean);
+    return {
+      sentences: remote.map(normalizeSentence).filter(Boolean),
+      reviewHistory: normalizeReviewHistory(parsed.reviewHistory),
+    };
   }
 
   async function writeRemoteSentences() {
@@ -1269,12 +1388,22 @@
     return [...byId.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
 
+  function mergeReviewHistory(localHistory, remoteHistory) {
+    const merged = { ...normalizeReviewHistory(localHistory) };
+    Object.entries(normalizeReviewHistory(remoteHistory)).forEach(([key, count]) => {
+      merged[key] = Math.max(Number(merged[key]) || 0, count);
+    });
+    return merged;
+  }
+
   async function syncMerge() {
     try {
       setSyncStatus("GitHub와 병합 동기화 중입니다...", "warn");
-      const remote = await readRemoteSentences();
-      sentences = mergeSentences(sentences, remote);
+      const remote = await readRemoteData();
+      sentences = mergeSentences(sentences, remote.sentences);
+      reviewHistory = mergeReviewHistory(reviewHistory, remote.reviewHistory);
       saveSentences();
+      saveReviewHistory();
       await writeRemoteSentences();
       renderAll();
       setSyncStatus(`동기화 완료: ${sentences.length}개 문장`, "ok");
@@ -1286,13 +1415,15 @@
   async function syncPull() {
     try {
       setSyncStatus("GitHub에서 내려받는 중입니다...", "warn");
-      const remote = await readRemoteSentences();
-      if (!confirm(`GitHub의 ${remote.length}개 문장으로 이 기기의 데이터를 교체할까요?`)) {
+      const remote = await readRemoteData();
+      if (!confirm(`GitHub의 ${remote.sentences.length}개 문장으로 이 기기의 데이터를 교체할까요?`)) {
         setSyncStatus("내려받기를 취소했습니다.", "warn");
         return;
       }
-      sentences = remote;
+      sentences = remote.sentences;
+      reviewHistory = remote.reviewHistory;
       saveSentences();
+      saveReviewHistory();
       reviewQueue = []; reviewIndex = 0; showTranslation = false;
       renderAll();
       setSyncStatus(`내려받기 완료: ${sentences.length}개 문장`, "ok");

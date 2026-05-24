@@ -430,6 +430,21 @@
       border: 2px solid #fcd9b6;
       color: #7c3010;
     }
+    .review-edit {
+      margin-top: 12px;
+      padding: 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      background: var(--surface);
+      display: grid;
+      gap: 10px;
+    }
+    .review-edit-row {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 110px auto;
+      gap: 8px;
+      align-items: end;
+    }
     .review-actions { display: flex; gap: 10px; margin-top: 22px; }
     .review-actions .btn { flex: 1; height: 44px; font-size: 15px; }
     .review-done {
@@ -483,6 +498,7 @@
       .list-toolbar { grid-template-columns: 1fr; }
       .s-card { flex-direction: column; }
       .review-stage { padding: 22px 18px; }
+      .review-edit-row { grid-template-columns: 1fr; }
       .review-actions { flex-wrap: wrap; }
     }
   </style>
@@ -1351,12 +1367,47 @@
       <div class="review-answer ${showTranslation ? "shown" : "hidden"}">
         ${showTranslation ? escapeHtml(item.translation) : "해석 확인 버튼을 누르세요"}
       </div>
+      ${showTranslation ? `
+        <form class="review-edit" id="reviewEditForm">
+          <div class="review-edit-row">
+            <label class="field">
+              <span class="field-label">해석 수정</span>
+              <input id="reviewTranslationInput" autocomplete="off" value="${escapeHtml(item.translation)}" required>
+            </label>
+            <label class="field">
+              <span class="field-label">난이도</span>
+              <select id="reviewDifficultyInput">
+                <option value="1" ${item.difficulty === 1 ? "selected" : ""}>1</option>
+                <option value="2" ${item.difficulty === 2 ? "selected" : ""}>2</option>
+                <option value="3" ${item.difficulty === 3 ? "selected" : ""}>3</option>
+                <option value="4" ${item.difficulty === 4 ? "selected" : ""}>4</option>
+              </select>
+            </label>
+            <button class="btn btn-secondary" type="submit">수정 저장</button>
+          </div>
+        </form>
+      ` : ""}
       <div class="review-actions">
         <button class="btn btn-secondary" id="showAnswerBtn" type="button" ${showTranslation ? "disabled" : ""}>해석 확인</button>
         <button class="btn btn-primary" id="completeReviewBtn" type="button">복습 완료 ✓</button>
         <button class="btn btn-warn" id="skipReviewBtn" type="button">넘기기</button>
       </div>
     `;
+  }
+
+  function saveReviewEdits(event) {
+    event.preventDefault();
+    const item = currentReviewItem();
+    if (!item) return;
+    const translation = document.querySelector("#reviewTranslationInput")?.value.trim();
+    const difficulty = Number(document.querySelector("#reviewDifficultyInput")?.value);
+    if (!translation) return;
+    item.translation = translation;
+    item.difficulty = [1,2,3,4].includes(difficulty) ? difficulty : item.difficulty;
+    item.updatedAt = new Date().toISOString();
+    saveSentences();
+    queueAutoSync();
+    renderAll();
   }
 
   function completeReview() {
@@ -1757,6 +1808,9 @@
       const { languageEl, countEl, diffChecksEl, favEl } = lastExtractSettings;
       startReview(languageEl, countEl, diffChecksEl, favEl, false);
     }
+  });
+  els.reviewStage.addEventListener("submit", e => {
+    if (e.target.id === "reviewEditForm") saveReviewEdits(e);
   });
 
   hydrateSyncSettings();

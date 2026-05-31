@@ -415,6 +415,10 @@
       color: var(--ink); overflow-wrap: anywhere;
       flex: 1; display: flex; align-items: center;
     }
+    .review-sentence.lang-ja {
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+      font-weight: 700;
+    }
     .review-answer {
       margin-top: 20px; padding: 16px 20px;
       border-radius: var(--r); line-height: 1.65;
@@ -430,6 +434,7 @@
       border: 2px solid #fcd9b6;
       color: #7c3010;
     }
+    .review-answer strong { font-weight: 800; color: #4a1f0d; }
     .review-edit {
       margin-top: 12px;
       padding: 14px;
@@ -1057,6 +1062,10 @@
       .replaceAll('"',"&quot;").replaceAll("'","&#039;");
   }
 
+  function renderInlineMarkup(value) {
+    return escapeHtml(value).replace(/\*\*([^*\n][\s\S]*?[^*\n]|\S)\*\*/g, "<strong>$1</strong>");
+  }
+
   // ── Render ──
   function renderAll() {
     renderList();
@@ -1363,9 +1372,9 @@
         <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
         <span class="diff-badge">${languageLabel(item.language)} · 난이도 ${item.difficulty}${item.favorite ? " · ★" : ""}</span>
       </div>
-      <div class="review-sentence">${escapeHtml(item.original)}</div>
+      <div class="review-sentence lang-${escapeHtml(item.language)}">${escapeHtml(item.original)}</div>
       <div class="review-answer ${showTranslation ? "shown" : "hidden"}">
-        ${showTranslation ? escapeHtml(item.translation) : "해석 확인 버튼을 누르세요"}
+        ${showTranslation ? renderInlineMarkup(item.translation) : "해석 확인 버튼을 누르세요"}
       </div>
       ${showTranslation ? `
         <form class="review-edit" id="reviewEditForm">

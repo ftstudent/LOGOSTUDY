@@ -448,6 +448,11 @@
       outline: none;
     }
 
+    input[type="checkbox"] {
+      width: auto;
+      accent-color: var(--accent2);
+    }
+
     input:focus, select:focus {
       border-color: rgba(124,140,255,.85);
       box-shadow: 0 0 0 3px rgba(124,140,255,.16);
@@ -631,6 +636,48 @@
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 8px;
       align-items: center;
+    }
+
+    .shift-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .shift-choice {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: rgba(255,255,255,.035);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .shift-choice input {
+      margin-top: 2px;
+    }
+
+    .shift-choice-copy {
+      min-width: 0;
+    }
+
+    .shift-choice-copy strong {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .shift-meta {
+      display: block;
+      margin-top: 3px;
+      color: #aeb5c5;
+      font-size: 12px;
+      line-height: 1.35;
     }
 
     .clock {
@@ -920,7 +967,7 @@
         <section class="panel">
           <div class="panel-title">
             <span>복습 일정 조정</span>
-            <span class="hint">남은 어휘 복습 전체를 뒤로 미룹니다</span>
+            <span class="hint">선택한 어휘 복습만 뒤로 미룹니다</span>
           </div>
           <div class="shift-row">
             <select id="reviewShiftDays">
@@ -929,8 +976,9 @@
               <option value="3">3일 미루기</option>
               <option value="7">7일 미루기</option>
             </select>
-            <button class="btn secondary small" id="shiftReviewsBtn" type="button">전체 일정 밀기</button>
+            <button class="btn secondary small" id="shiftReviewsBtn" type="button">선택 일정 밀기</button>
           </div>
+          <div class="shift-list" id="shiftBatchList"></div>
           <div class="hint" id="shiftSummary" style="margin-top:10px">진행 중인 어휘 배치에만 적용됩니다.</div>
         </section>
 
@@ -1588,6 +1636,27 @@
           </div>`;
       }
 
+      function nextReviewInfo(batch) {
+        const next = INTERVALS.find(interval => !batch.done.includes(interval));
+        if (!next) return '복습 완료';
+        const dueDate = addDays(batch.learnedAt, next + (Number(batch.delayDays) || 0));
+        const diff = dayDiff(today(), dueDate);
+        if (diff < 0) return `${fmtDate(dueDate)} 예정 · ${Math.abs(diff)}일 밀림`;
+        if (diff === 0) return `${fmtDate(dueDate)} 예정 · 오늘`;
+        return `${fmtDate(dueDate)} 예정 · ${diff}일 남음`;
+      }
+
+      function shiftBatchHtml(batch) {
+        return `
+          <label class="shift-choice">
+            <input type="checkbox" data-shift-batch="${batch.id}" checked>
+            <span class="shift-choice-copy">
+              <strong>${esc(batch.name)}</strong>
+              <span class="shift-meta">${subjectLabel(batch.subject)} · ${nextReviewInfo(batch)}</span>
+            </span>
+          </label>`;
+      }
+
       function learningHtml(batch) {
         const plannedAt = batch.plannedAt || batch.registeredAt;
         const diff = dayDiff(plannedAt, today());
@@ -1769,8 +1838,12 @@
         $('ticketList').innerHTML = tickets.length
           ? tickets.map(reward => ticketHtml(reward, data.tickets[reward.id])).join('')
           : '<div class="empty">보유한 사용권이 없습니다.</div>';
+        $('shiftBatchList').innerHTML = activeBatches.length
+          ? activeBatches.map(shiftBatchHtml).join('')
+          : '<div class="empty">미룰 수 있는 복습 일정이 없습니다.</div>';
+        $('shiftReviewsBtn').disabled = !activeBatches.length;
         $('shiftSummary').textContent = activeBatches.length
-          ? `진행 중인 어휘 배치 ${activeBatches.length}개에 적용됩니다.`
+          ? `진행 중인 어휘 배치 ${activeBatches.length}개 중 체크한 항목에 적용됩니다.`
           : '진행 중인 어휘 배치가 없습니다.';
         $('learningList').innerHTML = learning.length
           ? learning.map(learningHtml).join('')
@@ -1904,16 +1977,17 @@
       $('shiftReviewsBtn').addEventListener('click', () => {
         const days = Number($('reviewShiftDays').value);
         const data = load();
-        const targets = activeReviewBatches(data);
+        const selectedIds = [...document.querySelectorAll('[data-shift-batch]:checked')].map(input => input.dataset.shiftBatch);
+        const targets = activeReviewBatches(data).filter(batch => selectedIds.includes(batch.id));
         if (!targets.length) {
-          toast('미룰 복습 일정이 없습니다.');
+          toast('미룰 복습 일정을 선택하세요.');
           return;
         }
         for (const batch of targets) {
           batch.delayDays = (Number(batch.delayDays) || 0) + days;
         }
         save(data);
-        toast(`어휘 복습 일정 ${targets.length}개를 ${days}일 미뤘습니다.`);
+        toast(`선택한 복습 일정 ${targets.length}개를 ${days}일 미뤘습니다.`);
         render();
       });
 

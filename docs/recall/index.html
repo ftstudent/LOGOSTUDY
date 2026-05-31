@@ -1063,7 +1063,9 @@
   }
 
   function renderInlineMarkup(value) {
-    return escapeHtml(value).replace(/\*\*([^*\n][\s\S]*?[^*\n]|\S)\*\*/g, "<strong>$1</strong>");
+    return escapeHtml(value)
+      .replace(/\*\*([^*\n][\s\S]*?[^*\n]|\S)\*\*/g, "<strong>$1</strong>")
+      .replace(/\[([^\]\n]+)\]/g, "<strong>$1</strong>");
   }
 
   // ── Render ──

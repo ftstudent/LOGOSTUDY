@@ -42,47 +42,57 @@
 
   /* ---------------- Header ---------------- */
   header{
-    padding: 34px 32px 26px;
+    padding: 28px 32px 24px;
     max-width: 1240px;
     margin: 0 auto;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 3px double var(--ink);
     position: relative;
   }
 
-  .eyebrow{
-    font-family: 'IBM Plex Mono', monospace;
-    width: fit-content;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--paper);
-    background: var(--ink);
-    border-radius: 999px;
-    padding: 7px 11px;
-    display: flex;
+  .masthead-line{
+    display: grid;
+    grid-template-columns: auto minmax(40px, 1fr) auto;
     align-items: center;
-    gap: 8px;
+    gap: 14px;
     margin-bottom: 14px;
   }
-  .eyebrow::before{
-    content: "";
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--rust-dim);
-    display: inline-block;
+  .masthead-code,
+  .masthead-edition{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .masthead-code{
+    color: var(--rust);
+    font-weight: 600;
+  }
+  .masthead-edition{
+    color: var(--ink-soft);
+  }
+  .masthead-rule{
+    height: 1px;
+    background: var(--ink);
+    opacity: .7;
   }
 
   h1{
     font-family: 'Noto Sans KR', sans-serif;
-    font-weight: 800;
-    font-size: clamp(32px, 4.5vw, 54px);
-    line-height: 1.08;
+    font-size: 48px;
+    line-height: 1.12;
     margin: 0;
     letter-spacing: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    white-space: nowrap;
   }
-  h1 em{
-    font-style: normal;
-    color: var(--rust);
+  h1 strong{
+    font-weight: 800;
+  }
+  h1 span{
+    font-weight: 500;
   }
 
   .subtitle{
@@ -104,6 +114,13 @@
   }
 
   .controls-toggle{
+    display: none;
+  }
+
+  .data-actions{
+    display: contents;
+  }
+  .mobile-label{
     display: none;
   }
 
@@ -270,12 +287,6 @@
   }
   .sync-status.ok{ color: var(--brass); }
   .sync-status.err{ color: var(--rust); }
-  .sync-actions{
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
   /* ---------------- Grid ---------------- */
   main{
     max-width: 1240px;
@@ -516,65 +527,87 @@
 
   @media (max-width: 640px){
     header{
-      padding: calc(12px + env(safe-area-inset-top)) 16px 14px;
+      padding: calc(14px + env(safe-area-inset-top)) 16px 14px;
+      border-bottom: 2px solid var(--ink);
     }
-    .eyebrow{
-      font-size: 9px;
-      padding: 5px 8px;
-      gap: 6px;
+    .masthead-line{
+      grid-template-columns: auto minmax(24px, 1fr);
+      gap: 10px;
       margin-bottom: 8px;
     }
-    .eyebrow::before{
-      width: 5px;
-      height: 5px;
+    .masthead-code{
+      font-size: 8.5px;
+    }
+    .masthead-edition{
+      display: none;
     }
     h1{
-      font-size: 27px;
+      font-size: 25px;
       line-height: 1.15;
-      white-space: nowrap;
+      gap: 8px;
     }
+    h1 span{ font-weight: 500; }
 
     .controls-wrap{
-      position: relative;
-      top: auto;
+      position: sticky;
+      top: env(safe-area-inset-top, 0px);
+      transition: transform .18s ease;
+      will-change: transform;
+    }
+    .controls-wrap.mobile-hidden{
+      transform: translateY(calc(-100% - env(safe-area-inset-top, 0px)));
+    }
+    .controls-wrap.is-collapsed{
+      background: transparent;
+      border-bottom-color: transparent;
+      box-shadow: none;
     }
     .controls-toggle{
-      width: 100%;
-      min-height: 48px;
-      padding: 11px 16px;
-      border: 0;
-      border-radius: 0;
-      background: var(--paper);
+      width: 44px;
+      height: 44px;
+      min-height: 44px;
+      padding: 0;
+      margin: 6px 12px 6px auto;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: var(--card);
       color: var(--ink);
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      font-family: 'Noto Sans KR', sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0;
+      justify-content: center;
+      box-shadow: 2px 2px 0 var(--line-soft);
     }
     .controls-toggle:hover{
       background: var(--paper-dark);
       color: var(--ink);
-      border-color: transparent;
+      border-color: var(--line);
     }
-    .controls-toggle::after{
-      content: "+";
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 20px;
-      font-weight: 400;
+    .controls-icon{
+      font-size: 21px;
       line-height: 1;
-      color: var(--rust);
+      transition: transform .18s ease, color .18s ease;
     }
-    .controls-toggle[aria-expanded="true"]::after{
-      content: "−";
+    .controls-toggle[aria-expanded="true"] .controls-icon{
+      color: var(--rust);
+      transform: rotate(45deg);
     }
     .controls-wrap.is-collapsed .controls-panel{
       display: none;
     }
+    .controls-panel{
+      position: absolute;
+      top: 56px;
+      left: 0;
+      right: 0;
+      max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 56px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 14px 24px -18px var(--ink);
+    }
     .controls{
-      padding: 22px 16px 10px;
+      padding: 10px 16px 10px;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
@@ -586,7 +619,7 @@
     .search-field,
     .jump-field,
     .fav-filter-field,
-    .sync-actions{
+    .data-actions{
       grid-column: 1 / -1;
     }
     .search-field,
@@ -594,6 +627,25 @@
     .toggle-btn,
     .fav-filter-field{
       margin-top: 0 !important;
+    }
+    .search-field{
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 5px;
+      align-items: end;
+    }
+    .jump-field,
+    #jumpForm{
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 5px 8px;
+      align-items: end;
+    }
+    .field-label{
+      position: static;
+      grid-column: 1 / -1;
+      line-height: 1.2;
+      padding-left: 2px;
     }
     input[type="search"]{
       width: 100%;
@@ -620,13 +672,22 @@
       width: 100%;
       justify-content: center;
     }
-    .sync-actions{
+    .data-actions{
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
     }
-    .sync-actions .toggle-btn{
+    .data-actions .toggle-btn{
       width: 100%;
+      padding: 7px 2px;
+      font-size: 10.5px;
+      white-space: nowrap;
+    }
+    .desktop-label{
+      display: none;
+    }
+    .mobile-label{
+      display: inline;
     }
     .sync-status{
       font-size: 10px;
@@ -679,7 +740,7 @@
   }
 
   @media (max-width: 360px){
-    h1{ font-size: 24px; }
+    h1{ font-size: 22px; }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -690,12 +751,18 @@
 <body>
 
 <header>
-  <div class="eyebrow">Spanish Vocab · 1-2500</div>
-  <h1>스페인어 빈도사전 <em>카드함</em></h1>
+  <div class="masthead-line">
+    <span class="masthead-code">ES / 0001—2500</span>
+    <span class="masthead-rule" aria-hidden="true"></span>
+    <span class="masthead-edition">Frequency archive · study edition</span>
+  </div>
+  <h1><strong>스페인어</strong><span>빈도사전 카드함</span></h1>
 </header>
 
 <div class="controls-wrap is-collapsed" id="controlsWrap">
-  <button type="button" class="controls-toggle" id="controlsToggle" aria-expanded="false" aria-controls="controlsPanel">검색 · 필터 · 동기화</button>
+  <button type="button" class="controls-toggle" id="controlsToggle" aria-expanded="false" aria-controls="controlsPanel" aria-label="검색, 필터 및 동기화 열기" title="검색, 필터 및 동기화">
+    <span class="controls-icon" aria-hidden="true">⚙</span>
+  </button>
   <div class="controls-panel" id="controlsPanel">
   <div class="controls">
     <div class="field search-field">
@@ -712,11 +779,11 @@
     <div class="field fav-filter-field" style="margin-top:12px;">
       <div class="fav-chip" id="favOnlyChip"><span>★ 즐겨찾기만</span><span class="count" id="favCount">0</span></div>
     </div>
-    <button type="button" id="favExportBtn" class="toggle-btn" title="즐겨찾기 순위를 클립보드에 복사">즐겨찾기 내보내기</button>
-    <button type="button" id="favImportBtn" class="toggle-btn" title="복사해둔 순위 목록을 붙여넣어 복원">즐겨찾기 가져오기</button>
-    <div class="sync-actions" aria-label="클라우드 동기화">
-      <button type="button" id="cloudLoadBtn" class="toggle-btn">클라우드 불러오기</button>
-      <button type="button" id="cloudSaveBtn" class="toggle-btn">클라우드 저장</button>
+    <div class="data-actions" aria-label="즐겨찾기 및 클라우드 데이터">
+      <button type="button" id="favExportBtn" class="toggle-btn" title="즐겨찾기 순위를 클립보드에 복사"><span class="desktop-label">즐겨찾기 내보내기</span><span class="mobile-label">내보내기</span></button>
+      <button type="button" id="favImportBtn" class="toggle-btn" title="복사해둔 순위 목록을 붙여넣어 복원"><span class="desktop-label">즐겨찾기 가져오기</span><span class="mobile-label">가져오기</span></button>
+      <button type="button" id="cloudLoadBtn" class="toggle-btn" title="클라우드에서 즐겨찾기 불러오기"><span class="desktop-label">클라우드 불러오기</span><span class="mobile-label">불러오기</span></button>
+      <button type="button" id="cloudSaveBtn" class="toggle-btn" title="즐겨찾기를 클라우드에 저장"><span class="desktop-label">클라우드 저장</span><span class="mobile-label">저장</span></button>
     </div>
     <div class="sync-status" id="syncStatus">클라우드 연결 중...</div>
     <div class="spacer"></div>
@@ -924,10 +991,38 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     legendToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
 
-  controlsToggle.addEventListener('click', () => {
-    const open = controlsWrap.classList.toggle('is-collapsed') === false;
+  function setControlsOpen(open){
+    controlsWrap.classList.toggle('is-collapsed', !open);
     controlsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    controlsToggle.setAttribute('aria-label', open ? '검색, 필터 및 동기화 닫기' : '검색, 필터 및 동기화 열기');
+  }
+
+  controlsToggle.addEventListener('click', () => {
+    controlsWrap.classList.remove('mobile-hidden');
+    setControlsOpen(controlsWrap.classList.contains('is-collapsed'));
   });
+
+  const mobileControlsQuery = window.matchMedia('(max-width: 640px)');
+  let lastScrollY = window.scrollY;
+  let scrollTicking = false;
+  window.addEventListener('scroll', () => {
+    if (!mobileControlsQuery.matches || scrollTicking) return;
+    scrollTicking = true;
+    requestAnimationFrame(() => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollY;
+      if (currentY <= 12) {
+        controlsWrap.classList.remove('mobile-hidden');
+      } else if (delta > 5) {
+        setControlsOpen(false);
+        controlsWrap.classList.add('mobile-hidden');
+      } else if (delta < -3) {
+        controlsWrap.classList.remove('mobile-hidden');
+      }
+      lastScrollY = currentY;
+      scrollTicking = false;
+    });
+  }, { passive: true });
 
   // ---- Card rendering ----
   function cardHTML(d){

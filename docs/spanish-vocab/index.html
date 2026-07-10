@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>스페인어 빈도사전 카드함 · 1–2500</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -101,6 +101,10 @@
     background: var(--paper);
     border-bottom: 1px solid var(--line);
     box-shadow: 0 8px 18px -14px var(--shadow);
+  }
+
+  .controls-toggle{
+    display: none;
   }
 
   .controls{
@@ -510,6 +514,174 @@
     letter-spacing: 0.02em;
   }
 
+  @media (max-width: 640px){
+    header{
+      padding: calc(12px + env(safe-area-inset-top)) 16px 14px;
+    }
+    .eyebrow{
+      font-size: 9px;
+      padding: 5px 8px;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .eyebrow::before{
+      width: 5px;
+      height: 5px;
+    }
+    h1{
+      font-size: 27px;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
+    .controls-wrap{
+      position: relative;
+      top: auto;
+    }
+    .controls-toggle{
+      width: 100%;
+      min-height: 48px;
+      padding: 11px 16px;
+      border: 0;
+      border-radius: 0;
+      background: var(--paper);
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0;
+    }
+    .controls-toggle:hover{
+      background: var(--paper-dark);
+      color: var(--ink);
+      border-color: transparent;
+    }
+    .controls-toggle::after{
+      content: "+";
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1;
+      color: var(--rust);
+    }
+    .controls-toggle[aria-expanded="true"]::after{
+      content: "−";
+    }
+    .controls-wrap.is-collapsed .controls-panel{
+      display: none;
+    }
+    .controls{
+      padding: 22px 16px 10px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
+    }
+    .controls > *{
+      min-width: 0;
+    }
+    .search-field,
+    .jump-field,
+    .fav-filter-field,
+    .sync-actions{
+      grid-column: 1 / -1;
+    }
+    .search-field,
+    .jump-field,
+    .toggle-btn,
+    .fav-filter-field{
+      margin-top: 0 !important;
+    }
+    input[type="search"]{
+      width: 100%;
+    }
+    #jumpForm{
+      width: 100%;
+    }
+    #jumpForm input{
+      flex: 1;
+      width: auto;
+      min-width: 0;
+    }
+    input[type="search"],
+    input[type="number"],
+    button,
+    .fav-chip{
+      min-height: 42px;
+    }
+    button{
+      padding: 8px 9px;
+      font-size: 11px;
+    }
+    .fav-chip{
+      width: 100%;
+      justify-content: center;
+    }
+    .sync-actions{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .sync-actions .toggle-btn{
+      width: 100%;
+    }
+    .sync-status{
+      font-size: 10px;
+      align-self: center;
+    }
+    .spacer{
+      display: none;
+    }
+    .result-count{
+      margin-top: 0;
+      text-align: right;
+      align-self: center;
+    }
+
+    .pos-row{
+      padding: 8px 16px 10px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .pos-row::-webkit-scrollbar{
+      display: none;
+    }
+    .pos-chip{
+      flex: 0 0 auto;
+      min-height: 32px;
+    }
+
+    main{
+      padding: 14px 16px 10px;
+    }
+    #grid{
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+    }
+    .card{
+      padding: 18px 16px 14px;
+    }
+
+    #legend-section{
+      margin-top: 36px;
+      padding: 0 16px 40px;
+      overflow-x: auto;
+    }
+    table.legend{
+      min-width: 620px;
+    }
+  }
+
+  @media (max-width: 360px){
+    h1{ font-size: 24px; }
+  }
+
   @media (prefers-reduced-motion: reduce){
     .card, .card.flash{ animation: none; }
   }
@@ -522,7 +694,9 @@
   <h1>스페인어 빈도사전 <em>카드함</em></h1>
 </header>
 
-<div class="controls-wrap">
+<div class="controls-wrap is-collapsed" id="controlsWrap">
+  <button type="button" class="controls-toggle" id="controlsToggle" aria-expanded="false" aria-controls="controlsPanel">검색 · 필터 · 동기화</button>
+  <div class="controls-panel" id="controlsPanel">
   <div class="controls">
     <div class="field search-field">
       <span class="field-label">검색</span>
@@ -535,7 +709,7 @@
     </form>
     <button type="button" id="hideToggle" class="toggle-btn" aria-pressed="false">뜻 가리기 (자가 테스트)</button>
     <button type="button" id="shuffleBtn" class="toggle-btn">무작위 카드 10개</button>
-    <div class="field" style="margin-top:12px;">
+    <div class="field fav-filter-field" style="margin-top:12px;">
       <div class="fav-chip" id="favOnlyChip"><span>★ 즐겨찾기만</span><span class="count" id="favCount">0</span></div>
     </div>
     <button type="button" id="favExportBtn" class="toggle-btn" title="즐겨찾기 순위를 클립보드에 복사">즐겨찾기 내보내기</button>
@@ -549,6 +723,7 @@
     <div class="result-count" id="resultCount"></div>
   </div>
   <div class="pos-row" id="posRow"></div>
+  </div>
 </div>
 
 <main>
@@ -612,6 +787,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const cloudLoadBtn = document.getElementById('cloudLoadBtn');
   const cloudSaveBtn = document.getElementById('cloudSaveBtn');
   const syncStatus = document.getElementById('syncStatus');
+  const controlsToggle = document.getElementById('controlsToggle');
+  const controlsWrap = document.getElementById('controlsWrap');
 
   const CHUNK = 60;
   let filtered = DATA;
@@ -745,6 +922,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   legendToggle.addEventListener('click', () => {
     const open = legendWrap.classList.toggle('open');
     legendToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  controlsToggle.addEventListener('click', () => {
+    const open = controlsWrap.classList.toggle('is-collapsed') === false;
+    controlsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
 
   // ---- Card rendering ----

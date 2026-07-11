@@ -1289,11 +1289,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     dateFilterList.innerHTML = options.join('');
   }
 
+  function defaultStudyDate(now = new Date()){
+    const studyDate = new Date(now);
+    if (studyDate.getHours() < 4) studyDate.setDate(studyDate.getDate() - 1);
+    const year = studyDate.getFullYear();
+    const month = String(studyDate.getMonth() + 1).padStart(2, '0');
+    const day = String(studyDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   function openDateTagDialog(rank){
     const word = DATA.find(item => item.rank === rank);
     pendingDateTagRank = rank;
     dateTagTarget.textContent = `#${rank} · ${word?.word || ''}`;
-    dateTagInput.value = '';
+    dateTagInput.value = defaultStudyDate();
     dateTagDialog.showModal();
   }
 

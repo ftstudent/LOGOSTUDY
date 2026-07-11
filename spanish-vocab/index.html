@@ -278,6 +278,16 @@
     padding: 1px 5px;
   }
   .fav-chip.active .count{ background: var(--paper); color: var(--rust); }
+  .date-filter-btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+  }
+  .date-filter-value{
+    color: var(--rust);
+    font-weight: 600;
+  }
   .sync-status{
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
@@ -287,6 +297,124 @@
   }
   .sync-status.ok{ color: var(--brass); }
   .sync-status.err{ color: var(--rust); }
+
+  /* ---------------- Date dialogs ---------------- */
+  dialog{
+    width: min(380px, calc(100vw - 32px));
+    max-height: min(620px, calc(100dvh - 32px));
+    padding: 0;
+    border: 1px solid var(--ink);
+    border-radius: 4px;
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 8px 10px 0 rgba(35,47,73,.18);
+  }
+  dialog::backdrop{
+    background: rgba(35,47,73,.42);
+  }
+  .dialog-shell{
+    padding: 18px;
+  }
+  .dialog-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--ink);
+  }
+  .dialog-title{
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.3;
+  }
+  .dialog-close{
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+    padding: 0;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    font-size: 20px;
+    line-height: 1;
+  }
+  .dialog-target{
+    margin: 14px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--rust);
+  }
+  .date-tag-form{
+    display: grid;
+    gap: 8px;
+  }
+  .date-tag-form label{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--brass);
+  }
+  input[type="date"]{
+    width: 100%;
+    min-height: 44px;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--card);
+    color: var(--ink);
+    font: 14px 'IBM Plex Mono', monospace;
+  }
+  .dialog-actions{
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .dialog-actions .toggle-btn{
+    margin-top: 0;
+  }
+  .date-filter-list{
+    max-height: min(440px, calc(100dvh - 150px));
+    overflow-y: auto;
+    margin-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .date-filter-option{
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 8px;
+    border: 0;
+    border-bottom: 1px solid var(--line-soft);
+    border-radius: 0;
+    background: transparent;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .date-filter-option:hover,
+  .date-filter-option.active{
+    background: var(--card);
+    color: var(--rust);
+  }
+  .date-filter-option .count{
+    min-width: 28px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--brass-light);
+    color: var(--brass);
+    text-align: center;
+    font-size: 10px;
+  }
+  .date-filter-empty{
+    margin: 0;
+    padding: 20px 8px 8px;
+    color: var(--ink-soft);
+    font-size: 12px;
+    text-align: center;
+  }
+
   /* ---------------- Grid ---------------- */
   main{
     max-width: 1240px;
@@ -445,6 +573,54 @@
   .card-foot span{
     border-top: 1px solid var(--line-soft);
     padding-top: 6px;
+  }
+
+  .card-date-tags{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 2px 0 12px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line-soft);
+  }
+  .date-tag-chip{
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 5px 3px 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+  }
+  .date-tag-remove{
+    width: 20px;
+    height: 20px;
+    min-height: 20px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--rust);
+    font-size: 14px;
+    line-height: 1;
+  }
+  .date-tag-remove:hover{
+    background: var(--rust);
+    color: var(--paper);
+  }
+  .date-tag-add{
+    min-height: 28px;
+    padding: 4px 8px;
+    border: 1px dashed var(--brass);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--brass);
+    font-size: 10px;
   }
 
   #sentinel{ height: 1px; }
@@ -618,7 +794,6 @@
     }
     .search-field,
     .jump-field,
-    .fav-filter-field,
     .data-actions{
       grid-column: 1 / -1;
     }
@@ -671,6 +846,10 @@
     .fav-chip{
       width: 100%;
       justify-content: center;
+      min-height: 42px;
+    }
+    .date-filter-btn{
+      margin-top: 0;
     }
     .data-actions{
       display: grid;
@@ -728,6 +907,8 @@
     .card{
       padding: 18px 16px 14px;
     }
+    .date-tag-add{ min-height: 28px; }
+    .date-tag-remove{ min-height: 20px; }
 
     #legend-section{
       margin-top: 36px;
@@ -736,6 +917,10 @@
     }
     table.legend{
       min-width: 620px;
+    }
+    dialog{
+      width: min(380px, calc(100vw - 24px));
+      max-height: calc(100dvh - 24px);
     }
   }
 
@@ -779,11 +964,12 @@
     <div class="field fav-filter-field" style="margin-top:12px;">
       <div class="fav-chip" id="favOnlyChip"><span>★ 즐겨찾기만</span><span class="count" id="favCount">0</span></div>
     </div>
+    <button type="button" id="dateFilterBtn" class="toggle-btn date-filter-btn" aria-haspopup="dialog" aria-pressed="false">날짜별 보기 <span class="date-filter-value" id="dateFilterValue">전체</span></button>
     <div class="data-actions" aria-label="즐겨찾기 및 클라우드 데이터">
       <button type="button" id="favExportBtn" class="toggle-btn" title="즐겨찾기 순위를 클립보드에 복사"><span class="desktop-label">즐겨찾기 내보내기</span><span class="mobile-label">내보내기</span></button>
       <button type="button" id="favImportBtn" class="toggle-btn" title="복사해둔 순위 목록을 붙여넣어 복원"><span class="desktop-label">즐겨찾기 가져오기</span><span class="mobile-label">가져오기</span></button>
-      <button type="button" id="cloudLoadBtn" class="toggle-btn" title="클라우드에서 즐겨찾기 불러오기"><span class="desktop-label">클라우드 불러오기</span><span class="mobile-label">불러오기</span></button>
-      <button type="button" id="cloudSaveBtn" class="toggle-btn" title="즐겨찾기를 클라우드에 저장"><span class="desktop-label">클라우드 저장</span><span class="mobile-label">저장</span></button>
+      <button type="button" id="cloudLoadBtn" class="toggle-btn" title="클라우드에서 학습 데이터 불러오기"><span class="desktop-label">클라우드 불러오기</span><span class="mobile-label">불러오기</span></button>
+      <button type="button" id="cloudSaveBtn" class="toggle-btn" title="학습 데이터를 클라우드에 저장"><span class="desktop-label">클라우드 저장</span><span class="mobile-label">저장</span></button>
     </div>
     <div class="sync-status" id="syncStatus">클라우드 연결 중...</div>
     <div class="spacer"></div>
@@ -792,6 +978,34 @@
   <div class="pos-row" id="posRow"></div>
   </div>
 </div>
+
+<dialog id="dateTagDialog" aria-labelledby="dateTagDialogTitle">
+  <div class="dialog-shell">
+    <div class="dialog-head">
+      <h2 class="dialog-title" id="dateTagDialogTitle">날짜 태그 추가</h2>
+      <button type="button" class="dialog-close" data-dialog-close="dateTagDialog" aria-label="닫기">×</button>
+    </div>
+    <p class="dialog-target" id="dateTagTarget"></p>
+    <div class="date-tag-form">
+      <label for="dateTagInput">직접 날짜 선택</label>
+      <input type="date" id="dateTagInput" autocomplete="off" required>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="toggle-btn" data-dialog-close="dateTagDialog">취소</button>
+      <button type="button" id="dateTagSaveBtn">태그 추가</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="dateFilterDialog" aria-labelledby="dateFilterDialogTitle">
+  <div class="dialog-shell">
+    <div class="dialog-head">
+      <h2 class="dialog-title" id="dateFilterDialogTitle">날짜별 학습 범위</h2>
+      <button type="button" class="dialog-close" data-dialog-close="dateFilterDialog" aria-label="닫기">×</button>
+    </div>
+    <div class="date-filter-list" id="dateFilterList"></div>
+  </div>
+</dialog>
 
 <main>
   <div id="grid"></div>
@@ -827,7 +1041,9 @@ const SUPABASE_KEY = "sb_publishable_J8n4rbxSZAG755BMSnPrlQ_4LgqhwpC";
 const CLOUD_TABLE = "study_public_state";
 const CLOUD_ROW_ID = "default";
 const CLOUD_DATA_KEY = "spanishVocabFavorites";
+const CLOUD_DATE_TAGS_KEY = "spanishVocabDateTags";
 const STORAGE_KEY = "spanish-vocab-favorites:v1";
+const DATE_TAG_STORAGE_KEY = "spanish-vocab-date-tags:v1";
 const AUTO_SAVE_DELAY = 450;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -856,6 +1072,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const syncStatus = document.getElementById('syncStatus');
   const controlsToggle = document.getElementById('controlsToggle');
   const controlsWrap = document.getElementById('controlsWrap');
+  const dateFilterBtn = document.getElementById('dateFilterBtn');
+  const dateFilterValue = document.getElementById('dateFilterValue');
+  const dateFilterDialog = document.getElementById('dateFilterDialog');
+  const dateFilterList = document.getElementById('dateFilterList');
+  const dateTagDialog = document.getElementById('dateTagDialog');
+  const dateTagTarget = document.getElementById('dateTagTarget');
+  const dateTagInput = document.getElementById('dateTagInput');
+  const dateTagSaveBtn = document.getElementById('dateTagSaveBtn');
 
   const CHUNK = 60;
   let filtered = DATA;
@@ -864,7 +1088,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   let hideMeaning = false;
   let overrideList = null; // used for shuffle mode
   let favorites = localFavorites();
+  let dateTags = localDateTags();
   let favOnly = false;
+  let activeDateFilter = '';
+  let pendingDateTagRank = null;
   let saveTimer = null;
 
   function setSyncStatus(message, type = ''){
@@ -878,6 +1105,32 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       : [];
   }
 
+  function isValidDateTag(value){
+    return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  }
+
+  function normalizeDateTags(value){
+    const normalized = {};
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return normalized;
+    Object.entries(value).forEach(([rankKey, dates]) => {
+      const rank = Number(rankKey);
+      if (!Number.isInteger(rank) || rank < 1 || rank > 2500 || !Array.isArray(dates)) return;
+      const cleanDates = [...new Set(dates.filter(isValidDateTag))].sort();
+      if (cleanDates.length) normalized[rank] = cleanDates;
+    });
+    return normalized;
+  }
+
+  function mergeDateTags(...maps){
+    const merged = {};
+    maps.forEach(map => {
+      Object.entries(normalizeDateTags(map)).forEach(([rank, dates]) => {
+        merged[rank] = [...new Set([...(merged[rank] || []), ...dates])].sort();
+      });
+    });
+    return merged;
+  }
+
   function localFavorites(){
     try {
       return new Set(validRanks(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')));
@@ -886,8 +1139,21 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     }
   }
 
+  function localDateTags(){
+    try {
+      return normalizeDateTags(JSON.parse(localStorage.getItem(DATE_TAG_STORAGE_KEY) || '{}'));
+    } catch {
+      return {};
+    }
+  }
+
   function saveLocalFavorites(){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(favorites).sort((a,b) => a-b)));
+  }
+
+  function saveLocalDateTags(){
+    dateTags = normalizeDateTags(dateTags);
+    localStorage.setItem(DATE_TAG_STORAGE_KEY, JSON.stringify(dateTags));
   }
 
   function refreshFavoriteButtons(){
@@ -897,9 +1163,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     });
   }
 
-  async function loadCloudFavorites({ manual = false } = {}){
+  async function loadCloudState({ manual = false } = {}){
     try {
-      setSyncStatus('클라우드에서 즐겨찾기 불러오는 중...');
+      setSyncStatus('클라우드에서 학습 데이터 불러오는 중...');
       const { data, error } = await supabase
         .from(CLOUD_TABLE)
         .select('data,updated_at')
@@ -908,13 +1174,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       if (error) throw error;
 
       const remoteRanks = validRanks(data?.data?.[CLOUD_DATA_KEY]);
-      if (remoteRanks.length) {
-        favorites = new Set([...favorites, ...remoteRanks]);
-        saveLocalFavorites();
-      }
+      const remoteDateTags = normalizeDateTags(data?.data?.[CLOUD_DATE_TAGS_KEY]);
+      favorites = new Set([...favorites, ...remoteRanks]);
+      dateTags = mergeDateTags(dateTags, remoteDateTags);
+      saveLocalFavorites();
+      saveLocalDateTags();
       updateFavCount();
       refreshFavoriteButtons();
-      if (favOnly || manual) applyFilters();
+      refreshDateTagRows();
+      updateDateFilterButton();
+      if (favOnly || activeDateFilter || manual) applyFilters();
       setSyncStatus(
         data?.updated_at
           ? `클라우드 동기화 완료 · ${new Date(data.updated_at).toLocaleTimeString('ko-KR')}`
@@ -927,10 +1196,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     }
   }
 
-  async function saveCloudFavorites({ manual = false } = {}){
+  async function saveCloudState({ manual = false } = {}){
     saveLocalFavorites();
+    saveLocalDateTags();
     try {
-      setSyncStatus(manual ? '클라우드에 수동 저장 중...' : '클라우드에 즐겨찾기 저장 중...');
+      setSyncStatus(manual ? '클라우드에 수동 저장 중...' : '클라우드에 학습 데이터 저장 중...');
       const { data: current, error: loadError } = await supabase
         .from(CLOUD_TABLE)
         .select('data')
@@ -941,6 +1211,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       const nextData = {
         ...(current?.data || {}),
         [CLOUD_DATA_KEY]: Array.from(favorites).sort((a,b) => a-b),
+        [CLOUD_DATE_TAGS_KEY]: normalizeDateTags(dateTags),
       };
       const { error } = await supabase
         .from(CLOUD_TABLE)
@@ -954,14 +1225,76 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     }
   }
 
-  function queueFavoriteSave(){
+  function queueCloudSave(){
     saveLocalFavorites();
+    saveLocalDateTags();
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(saveCloudFavorites, AUTO_SAVE_DELAY);
+    saveTimer = setTimeout(saveCloudState, AUTO_SAVE_DELAY);
   }
 
   function updateFavCount(){
     favCount.textContent = favorites.size;
+  }
+
+  function formatDateTag(date){
+    return date.replace(/-/g, '.');
+  }
+
+  function cardDateTagsInnerHTML(rank){
+    const tags = dateTags[rank] || [];
+    return tags.map(date => `
+      <span class="date-tag-chip">
+        <span>${formatDateTag(date)}</span>
+        <button type="button" class="date-tag-remove" data-rank="${rank}" data-date="${date}" aria-label="${formatDateTag(date)} 태그 삭제">×</button>
+      </span>`).join('') + `
+      <button type="button" class="date-tag-add" data-rank="${rank}" aria-label="날짜 태그 추가">+ 날짜</button>`;
+  }
+
+  function refreshDateTagRows(){
+    document.querySelectorAll('[data-date-tags-rank]').forEach(row => {
+      const rank = parseInt(row.dataset.dateTagsRank, 10);
+      row.innerHTML = cardDateTagsInnerHTML(rank);
+    });
+  }
+
+  function dateTagCounts(){
+    const counts = new Map();
+    Object.values(dateTags).forEach(dates => {
+      dates.forEach(date => counts.set(date, (counts.get(date) || 0) + 1));
+    });
+    return [...counts.entries()].sort(([a], [b]) => b.localeCompare(a));
+  }
+
+  function updateDateFilterButton(){
+    const active = Boolean(activeDateFilter);
+    dateFilterBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    dateFilterValue.textContent = active ? formatDateTag(activeDateFilter) : '전체';
+  }
+
+  function renderDateFilterList(){
+    const entries = dateTagCounts();
+    const allActive = activeDateFilter === '' ? ' active' : '';
+    const options = [`
+      <button type="button" class="date-filter-option${allActive}" data-filter-date="">
+        <span>전체 날짜</span><span class="count">${DATA.length.toLocaleString()}</span>
+      </button>`];
+    entries.forEach(([date, count]) => {
+      const active = date === activeDateFilter ? ' active' : '';
+      options.push(`
+        <button type="button" class="date-filter-option${active}" data-filter-date="${date}">
+          <span>${formatDateTag(date)}</span><span class="count">${count}</span>
+        </button>`);
+    });
+    if (!entries.length) options.push('<p class="date-filter-empty">아직 추가한 날짜 태그가 없습니다.</p>');
+    dateFilterList.innerHTML = options.join('');
+  }
+
+  function openDateTagDialog(rank){
+    const word = DATA.find(item => item.rank === rank);
+    pendingDateTagRank = rank;
+    dateTagTarget.textContent = `#${rank} · ${word?.word || ''}`;
+    dateTagInput.value = '';
+    dateTagDialog.showModal();
   }
 
   // ---- Build POS chip row ----
@@ -1024,6 +1357,49 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     });
   }, { passive: true });
 
+  document.querySelectorAll('[data-dialog-close]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById(btn.dataset.dialogClose)?.close();
+    });
+  });
+
+  dateFilterBtn.addEventListener('click', () => {
+    renderDateFilterList();
+    dateFilterDialog.showModal();
+  });
+
+  dateFilterList.addEventListener('click', (event) => {
+    const option = event.target.closest('[data-filter-date]');
+    if (!option) return;
+    activeDateFilter = option.dataset.filterDate || '';
+    updateDateFilterButton();
+    overrideList = null;
+    dateFilterDialog.close();
+    if (mobileControlsQuery.matches) setControlsOpen(false);
+    applyFilters();
+  });
+
+  dateTagSaveBtn.addEventListener('click', () => {
+    if (!dateTagInput.reportValidity() || pendingDateTagRank === null) return;
+    const date = dateTagInput.value;
+    if (!isValidDateTag(date)) return;
+    const tags = new Set(dateTags[pendingDateTagRank] || []);
+    tags.add(date);
+    dateTags[pendingDateTagRank] = [...tags].sort();
+    saveLocalDateTags();
+    const row = document.querySelector(`[data-date-tags-rank="${pendingDateTagRank}"]`);
+    if (row) row.innerHTML = cardDateTagsInnerHTML(pendingDateTagRank);
+    renderDateFilterList();
+    queueCloudSave();
+    dateTagDialog.close();
+    pendingDateTagRank = null;
+  });
+
+  dateTagDialog.addEventListener('close', () => {
+    pendingDateTagRank = null;
+    dateTagInput.value = '';
+  });
+
   // ---- Card rendering ----
   function cardHTML(d){
     return `
@@ -1040,6 +1416,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
         <hr class="divider">
         <p class="example-es">${escapeHTML(d.ex_es)}</p>
         <p class="example-en">${escapeHTML(d.ex_en)}</p>
+        <div class="card-date-tags" data-date-tags-rank="${d.rank}">${cardDateTagsInnerHTML(d.rank)}</div>
         <div class="card-foot"><span>p. ${d.page}</span></div>
       </article>`;
   }
@@ -1064,7 +1441,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     renderedCount = 0;
     const source = overrideList || filtered;
     if (source.length === 0){
-      grid.innerHTML = '<div class="empty-state">일치하는 단어가 없습니다. 검색어나 품사 필터를 확인해 보세요.</div>';
+      grid.innerHTML = '<div class="empty-state">일치하는 단어가 없습니다. 검색어나 필터를 확인해 보세요.</div>';
       resultCount.innerHTML = `<b>0</b> / 2,500`;
       return;
     }
@@ -1078,6 +1455,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     const q = searchInput.value.trim().toLowerCase();
     filtered = DATA.filter(d => {
       if (favOnly && !favorites.has(d.rank)) return false;
+      if (activeDateFilter && !(dateTags[d.rank] || []).includes(activeDateFilter)) return false;
       if (activePos.size > 0 && !activePos.has(d.pos)) return false;
       if (!q) return true;
       return (
@@ -1104,6 +1482,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     searchInput.value = '';
     activePos.clear();
     document.querySelectorAll('.pos-chip.active').forEach(c => c.classList.remove('active'));
+    favOnly = false;
+    favOnlyChip.classList.remove('active');
+    activeDateFilter = '';
+    updateDateFilterButton();
     overrideList = null;
     filtered = DATA;
     grid.innerHTML = '';
@@ -1136,13 +1518,44 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   });
 
   grid.addEventListener('click', (e) => {
-    const btn = e.target.closest('.star-btn');
-    if (!btn) return;
-    const rank = parseInt(btn.dataset.rank, 10);
-    if (favorites.has(rank)){ favorites.delete(rank); btn.classList.remove('active'); }
-    else { favorites.add(rank); btn.classList.add('active'); }
+    const addDateBtn = e.target.closest('.date-tag-add');
+    if (addDateBtn){
+      openDateTagDialog(parseInt(addDateBtn.dataset.rank, 10));
+      return;
+    }
+
+    const removeDateBtn = e.target.closest('.date-tag-remove');
+    if (removeDateBtn){
+      const rank = parseInt(removeDateBtn.dataset.rank, 10);
+      const date = removeDateBtn.dataset.date;
+      const nextDates = (dateTags[rank] || []).filter(item => item !== date);
+      if (nextDates.length) dateTags[rank] = nextDates;
+      else delete dateTags[rank];
+      saveLocalDateTags();
+      queueCloudSave();
+      renderDateFilterList();
+      if (activeDateFilter === date) {
+        const dateStillExists = Object.values(dateTags).some(dates => dates.includes(date));
+        if (!dateStillExists) {
+          activeDateFilter = '';
+          updateDateFilterButton();
+        }
+        applyFilters();
+      }
+      else {
+        const row = document.querySelector(`[data-date-tags-rank="${rank}"]`);
+        if (row) row.innerHTML = cardDateTagsInnerHTML(rank);
+      }
+      return;
+    }
+
+    const starBtn = e.target.closest('.star-btn');
+    if (!starBtn) return;
+    const rank = parseInt(starBtn.dataset.rank, 10);
+    if (favorites.has(rank)){ favorites.delete(rank); starBtn.classList.remove('active'); }
+    else { favorites.add(rank); starBtn.classList.add('active'); }
     updateFavCount();
-    queueFavoriteSave();
+    queueCloudSave();
     if (favOnly) applyFilters(); // re-filter live if viewing favorites only
   });
 
@@ -1170,19 +1583,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     }
     favorites = new Set(nums);
     updateFavCount();
-    queueFavoriteSave();
+    queueCloudSave();
     overrideList = null;
     applyFilters();
     alert(`${nums.length}개의 즐겨찾기를 복원했습니다.`);
   });
 
   cloudLoadBtn.addEventListener('click', () => {
-    loadCloudFavorites({ manual: true });
+    loadCloudState({ manual: true });
   });
 
   cloudSaveBtn.addEventListener('click', () => {
     clearTimeout(saveTimer);
-    saveCloudFavorites({ manual: true });
+    saveCloudState({ manual: true });
   });
 
   shuffleBtn.addEventListener('click', () => {
@@ -1203,8 +1616,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   }, { rootMargin: '400px' });
   io.observe(sentinel);
 
-  await loadCloudFavorites();
+  await loadCloudState();
   updateFavCount();
+  updateDateFilterButton();
   resetGrid();
 })();
 </script>

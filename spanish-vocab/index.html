@@ -530,12 +530,14 @@
     margin-bottom: 14px;
   }
 
-  .meaning.hidden-mode{
+  .meaning.hidden-mode,
+  .example-en.hidden-mode{
     filter: blur(6px);
     user-select: none;
     transition: filter .15s ease;
   }
-  .card:hover .meaning.hidden-mode{
+  .card:hover .meaning.hidden-mode,
+  .card:hover .example-en.hidden-mode{
     filter: blur(0px);
   }
 
@@ -959,7 +961,7 @@
       <input type="number" id="jumpInput" placeholder="1–2500" min="1" max="2500">
       <button type="submit">이동</button>
     </form>
-    <button type="button" id="hideToggle" class="toggle-btn" aria-pressed="false">뜻 가리기 (자가 테스트)</button>
+    <button type="button" id="hideToggle" class="toggle-btn" aria-pressed="false">해석 숨기기</button>
     <button type="button" id="shuffleBtn" class="toggle-btn">무작위 카드 10개</button>
     <div class="field fav-filter-field" style="margin-top:12px;">
       <div class="fav-chip" id="favOnlyChip"><span>★ 즐겨찾기만</span><span class="count" id="favCount">0</span></div>
@@ -1424,7 +1426,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
         <p class="meaning${hideMeaning ? ' hidden-mode' : ''}">${escapeHTML(d.en)}</p>
         <hr class="divider">
         <p class="example-es">${escapeHTML(d.ex_es)}</p>
-        <p class="example-en">${escapeHTML(d.ex_en)}</p>
+        <p class="example-en${hideMeaning ? ' hidden-mode' : ''}">${escapeHTML(d.ex_en)}</p>
         <div class="card-date-tags" data-date-tags-rank="${d.rank}">${cardDateTagsInnerHTML(d.rank)}</div>
         <div class="card-foot"><span>p. ${d.page}</span></div>
       </article>`;
@@ -1515,8 +1517,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   hideToggle.addEventListener('click', () => {
     hideMeaning = !hideMeaning;
     hideToggle.setAttribute('aria-pressed', hideMeaning ? 'true' : 'false');
-    hideToggle.textContent = hideMeaning ? '뜻 표시하기' : '뜻 가리기 (자가 테스트)';
-    document.querySelectorAll('.meaning').forEach(m => m.classList.toggle('hidden-mode', hideMeaning));
+    hideToggle.textContent = hideMeaning ? '해석 보기' : '해석 숨기기';
+    document.querySelectorAll('.meaning, .example-en').forEach(el => el.classList.toggle('hidden-mode', hideMeaning));
   });
 
   favOnlyChip.addEventListener('click', () => {

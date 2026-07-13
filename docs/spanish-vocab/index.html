@@ -536,9 +536,12 @@
     user-select: none;
     transition: filter .15s ease;
   }
-  .card:hover .meaning.hidden-mode,
-  .card:hover .example-en.hidden-mode{
+  .card.translation-visible .meaning.hidden-mode,
+  .card.translation-visible .example-en.hidden-mode{
     filter: blur(0px);
+  }
+  #grid.translation-test-mode .card{
+    cursor: pointer;
   }
 
   .divider{
@@ -1518,6 +1521,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     hideMeaning = !hideMeaning;
     hideToggle.setAttribute('aria-pressed', hideMeaning ? 'true' : 'false');
     hideToggle.textContent = hideMeaning ? '해석 보기' : '해석 숨기기';
+    grid.classList.toggle('translation-test-mode', hideMeaning);
+    document.querySelectorAll('.card.translation-visible').forEach(card => card.classList.remove('translation-visible'));
     document.querySelectorAll('.meaning, .example-en').forEach(el => el.classList.toggle('hidden-mode', hideMeaning));
   });
 
@@ -1561,13 +1566,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     }
 
     const starBtn = e.target.closest('.star-btn');
-    if (!starBtn) return;
-    const rank = parseInt(starBtn.dataset.rank, 10);
-    if (favorites.has(rank)){ favorites.delete(rank); starBtn.classList.remove('active'); }
-    else { favorites.add(rank); starBtn.classList.add('active'); }
-    updateFavCount();
-    queueCloudSave();
-    if (favOnly) applyFilters(); // re-filter live if viewing favorites only
+    if (starBtn){
+      const rank = parseInt(starBtn.dataset.rank, 10);
+      if (favorites.has(rank)){ favorites.delete(rank); starBtn.classList.remove('active'); }
+      else { favorites.add(rank); starBtn.classList.add('active'); }
+      updateFavCount();
+      queueCloudSave();
+      if (favOnly) applyFilters(); // re-filter live if viewing favorites only
+      return;
+    }
+
+    if (!hideMeaning || e.target.closest('button, input, .card-date-tags')) return;
+    const card = e.target.closest('.card');
+    if (card) card.classList.toggle('translation-visible');
   });
 
   favExportBtn.addEventListener('click', async () => {

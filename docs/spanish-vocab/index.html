@@ -468,6 +468,115 @@
     text-align: center;
   }
 
+  dialog.review-dialog{
+    width: min(520px, calc(100vw - 32px));
+  }
+  .review-toolbar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .review-toolbar-label{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--brass);
+  }
+  .review-list-actions{
+    display: flex;
+    gap: 5px;
+  }
+  .review-list-action{
+    min-height: 30px;
+    padding: 5px 8px;
+    border-color: var(--line);
+    background: var(--card);
+    color: var(--ink-soft);
+    font-size: 10px;
+  }
+  .review-date-list{
+    max-height: min(280px, calc(100dvh - 360px));
+    overflow-y: auto;
+    margin-top: 8px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .review-date-option{
+    min-height: 42px;
+    padding: 8px;
+    border-bottom: 1px solid var(--line-soft);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+  }
+  .review-date-option:last-child{ border-bottom: 0; }
+  .review-date-option:hover{ background: var(--card); }
+  .review-date-option:has(input:checked){
+    background: var(--card);
+    color: var(--rust);
+  }
+  .review-date-option input{
+    width: 17px;
+    height: 17px;
+    margin: 0;
+    accent-color: var(--rust);
+    flex: 0 0 auto;
+  }
+  .review-date-text{
+    flex: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+  .review-date-count{
+    min-width: 30px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--brass-light);
+    color: var(--brass);
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+  }
+  .review-fields{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .review-number-field{
+    display: grid;
+    gap: 6px;
+  }
+  .review-number-field label{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--brass);
+  }
+  .review-number-field input[type="number"]{
+    width: 100%;
+    min-height: 40px;
+  }
+  .review-scope-summary{
+    min-height: 20px;
+    margin: 12px 0 0;
+    color: var(--ink-soft);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+  }
+  .review-scope-summary strong{ color: var(--rust); }
+  .review-constraint-note{
+    min-height: 18px;
+    margin: 3px 0 0;
+    color: var(--brass);
+    font-size: 11px;
+  }
+  #reviewSubmitBtn:disabled{
+    cursor: not-allowed;
+    opacity: .42;
+  }
+
   /* ---------------- Grid ---------------- */
   main{
     max-width: 1240px;
@@ -984,6 +1093,12 @@
       width: min(380px, calc(100vw - 24px));
       max-height: calc(100dvh - 24px);
     }
+    dialog.review-dialog{
+      width: calc(100vw - 24px);
+    }
+    .review-date-list{
+      max-height: min(260px, calc(100dvh - 350px));
+    }
   }
 
   @media (max-width: 360px){
@@ -1022,7 +1137,7 @@
       <button type="submit">이동</button>
     </form>
     <button type="button" id="hideToggle" class="toggle-btn" aria-pressed="false">해석 숨기기</button>
-    <button type="button" id="shuffleBtn" class="toggle-btn">무작위 카드 10개</button>
+    <button type="button" id="reviewBtn" class="toggle-btn" aria-haspopup="dialog">복습 추출</button>
     <div class="field fav-filter-field" style="margin-top:12px;">
       <div class="fav-chip" id="favOnlyChip"><span>★ 즐겨찾기만</span><span class="count" id="favCount">0</span></div>
     </div>
@@ -1072,6 +1187,39 @@
     </div>
     <div class="date-filter-list" id="dateFilterList"></div>
   </div>
+</dialog>
+
+<dialog id="reviewDialog" class="review-dialog" aria-labelledby="reviewDialogTitle">
+  <form id="reviewForm" class="dialog-shell">
+    <div class="dialog-head">
+      <h2 class="dialog-title" id="reviewDialogTitle">날짜 묶음 복습</h2>
+      <button type="button" class="dialog-close" data-dialog-close="reviewDialog" aria-label="닫기">×</button>
+    </div>
+    <div class="review-toolbar">
+      <span class="review-toolbar-label">학습 날짜</span>
+      <div class="review-list-actions">
+        <button type="button" class="review-list-action" id="reviewSelectAllBtn">전체 선택</button>
+        <button type="button" class="review-list-action" id="reviewClearBtn">선택 해제</button>
+      </div>
+    </div>
+    <div class="review-date-list" id="reviewDateList"></div>
+    <div class="review-fields">
+      <div class="review-number-field">
+        <label for="reviewTotalInput">총 추출 수</label>
+        <input type="number" id="reviewTotalInput" min="1" max="2500" value="20" inputmode="numeric" required>
+      </div>
+      <div class="review-number-field">
+        <label for="reviewFavoriteInput">★ 최소 포함</label>
+        <input type="number" id="reviewFavoriteInput" min="0" max="2500" value="0" inputmode="numeric" required>
+      </div>
+    </div>
+    <p class="review-scope-summary" id="reviewScopeSummary"></p>
+    <p class="review-constraint-note" id="reviewConstraintNote"></p>
+    <div class="dialog-actions">
+      <button type="button" class="toggle-btn" data-dialog-close="reviewDialog">취소</button>
+      <button type="submit" id="reviewSubmitBtn" disabled>랜덤 추출</button>
+    </div>
+  </form>
 </dialog>
 
 <main>
@@ -1124,7 +1272,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const jumpForm = document.getElementById('jumpForm');
   const jumpInput = document.getElementById('jumpInput');
   const hideToggle = document.getElementById('hideToggle');
-  const shuffleBtn = document.getElementById('shuffleBtn');
+  const reviewBtn = document.getElementById('reviewBtn');
   const posRow = document.getElementById('posRow');
   const posToggle = document.getElementById('posToggle');
   const resultCount = document.getElementById('resultCount');
@@ -1144,6 +1292,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const dateFilterValue = document.getElementById('dateFilterValue');
   const dateFilterDialog = document.getElementById('dateFilterDialog');
   const dateFilterList = document.getElementById('dateFilterList');
+  const reviewDialog = document.getElementById('reviewDialog');
+  const reviewForm = document.getElementById('reviewForm');
+  const reviewDateList = document.getElementById('reviewDateList');
+  const reviewSelectAllBtn = document.getElementById('reviewSelectAllBtn');
+  const reviewClearBtn = document.getElementById('reviewClearBtn');
+  const reviewTotalInput = document.getElementById('reviewTotalInput');
+  const reviewFavoriteInput = document.getElementById('reviewFavoriteInput');
+  const reviewScopeSummary = document.getElementById('reviewScopeSummary');
+  const reviewConstraintNote = document.getElementById('reviewConstraintNote');
+  const reviewSubmitBtn = document.getElementById('reviewSubmitBtn');
   const dateTagDialog = document.getElementById('dateTagDialog');
   const dateTagTarget = document.getElementById('dateTagTarget');
   const dateTagInput = document.getElementById('dateTagInput');
@@ -1159,6 +1317,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   let dateTags = localDateTags();
   let favOnly = false;
   let activeDateFilter = '';
+  let selectedReviewDates = new Set();
+  let reviewSelectionInitialized = false;
   let pendingDateTagRank = null;
   let saveTimer = null;
 
@@ -1251,6 +1411,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       refreshFavoriteButtons();
       refreshDateTagRows();
       updateDateFilterButton();
+      if (reviewDialog.open) renderReviewDateList();
       if (favOnly || activeDateFilter || manual) applyFilters();
       setSyncStatus(
         data?.updated_at
@@ -1355,6 +1516,77 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     });
     if (!entries.length) options.push('<p class="date-filter-empty">아직 추가한 날짜 태그가 없습니다.</p>');
     dateFilterList.innerHTML = options.join('');
+  }
+
+  function reviewPool(){
+    if (!selectedReviewDates.size) return [];
+    return DATA.filter(item =>
+      (dateTags[item.rank] || []).some(date => selectedReviewDates.has(date))
+    );
+  }
+
+  function updateReviewSummary(){
+    const pool = reviewPool();
+    const availableFavorites = pool.filter(item => favorites.has(item.rank)).length;
+    const requestedTotal = Math.max(1, parseInt(reviewTotalInput.value, 10) || 1);
+    const plannedTotal = Math.min(requestedTotal, pool.length);
+    const requestedFavorites = Math.max(0, parseInt(reviewFavoriteInput.value, 10) || 0);
+    const guaranteedFavorites = Math.min(requestedFavorites, availableFavorites, plannedTotal);
+    const notes = [];
+
+    reviewScopeSummary.innerHTML = selectedReviewDates.size
+      ? `<strong>${selectedReviewDates.size}일</strong> · 고유 ${pool.length.toLocaleString()}개 · ★ ${availableFavorites.toLocaleString()}개`
+      : '날짜를 선택하세요.';
+
+    if (pool.length && requestedTotal > pool.length) notes.push(`총 ${pool.length.toLocaleString()}개 전부 추출`);
+    if (requestedFavorites > guaranteedFavorites) notes.push(`즐겨찾기는 최대 ${guaranteedFavorites.toLocaleString()}개 보장`);
+    reviewConstraintNote.textContent = notes.join(' · ');
+    reviewSubmitBtn.disabled = pool.length === 0;
+  }
+
+  function renderReviewDateList({ initialize = false } = {}){
+    const entries = dateTagCounts();
+    const availableDates = new Set(entries.map(([date]) => date));
+    selectedReviewDates = new Set([...selectedReviewDates].filter(date => availableDates.has(date)));
+
+    if (initialize && !reviewSelectionInitialized) {
+      const firstDate = activeDateFilter && availableDates.has(activeDateFilter)
+        ? activeDateFilter
+        : entries[0]?.[0];
+      if (firstDate) selectedReviewDates.add(firstDate);
+      reviewSelectionInitialized = true;
+    }
+
+    reviewDateList.innerHTML = entries.length
+      ? entries.map(([date, count]) => `
+          <label class="review-date-option">
+            <input type="checkbox" data-review-date="${date}"${selectedReviewDates.has(date) ? ' checked' : ''}>
+            <span class="review-date-text">${formatDateTag(date)}</span>
+            <span class="review-date-count">${count.toLocaleString()}</span>
+          </label>`).join('')
+      : '<p class="date-filter-empty">아직 추가한 날짜 태그가 없습니다.</p>';
+    updateReviewSummary();
+  }
+
+  function shuffleArray(items){
+    const copy = items.slice();
+    for (let i = copy.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+
+  function clearViewFiltersForReview(){
+    searchInput.value = '';
+    activePos.clear();
+    document.querySelectorAll('.pos-chip.active').forEach(chip => chip.classList.remove('active'));
+    updatePosToggle();
+    favOnly = false;
+    favOnlyChip.classList.remove('active');
+    activeDateFilter = '';
+    updateDateFilterButton();
+    filtered = DATA;
   }
 
   function defaultStudyDate(now = new Date()){
@@ -1473,6 +1705,59 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     applyFilters();
   });
 
+  reviewBtn.addEventListener('click', () => {
+    renderReviewDateList({ initialize: true });
+    reviewDialog.showModal();
+  });
+
+  reviewDateList.addEventListener('change', (event) => {
+    const checkbox = event.target.closest('[data-review-date]');
+    if (!checkbox) return;
+    if (checkbox.checked) selectedReviewDates.add(checkbox.dataset.reviewDate);
+    else selectedReviewDates.delete(checkbox.dataset.reviewDate);
+    updateReviewSummary();
+  });
+
+  reviewSelectAllBtn.addEventListener('click', () => {
+    selectedReviewDates = new Set(dateTagCounts().map(([date]) => date));
+    renderReviewDateList();
+  });
+
+  reviewClearBtn.addEventListener('click', () => {
+    selectedReviewDates.clear();
+    renderReviewDateList();
+  });
+
+  reviewTotalInput.addEventListener('input', updateReviewSummary);
+  reviewFavoriteInput.addEventListener('input', updateReviewSummary);
+
+  reviewForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const pool = reviewPool();
+    if (!pool.length) return;
+
+    const requestedTotal = Math.max(1, parseInt(reviewTotalInput.value, 10) || 1);
+    const total = Math.min(requestedTotal, pool.length);
+    const requestedFavorites = Math.max(0, parseInt(reviewFavoriteInput.value, 10) || 0);
+    const favoritePool = pool.filter(item => favorites.has(item.rank));
+    const guaranteedCount = Math.min(requestedFavorites, favoritePool.length, total);
+    const guaranteed = shuffleArray(favoritePool).slice(0, guaranteedCount);
+    const guaranteedRanks = new Set(guaranteed.map(item => item.rank));
+    const remainder = pool.filter(item => !guaranteedRanks.has(item.rank));
+    const selected = guaranteed.concat(shuffleArray(remainder).slice(0, total - guaranteed.length));
+
+    reviewTotalInput.value = String(total);
+    reviewFavoriteInput.value = String(Math.min(requestedFavorites, total));
+    clearViewFiltersForReview();
+    overrideList = shuffleArray(selected);
+    resetGrid();
+    reviewDialog.close();
+    if (mobileControlsQuery.matches) setControlsOpen(false);
+    requestAnimationFrame(() => {
+      document.querySelector('main').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
   dateTagSaveBtn.addEventListener('click', () => {
     if (!dateTagInput.reportValidity() || pendingDateTagRank === null) return;
     const date = dateTagInput.value;
@@ -1541,7 +1826,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     }
     renderNextChunk();
     resultCount.innerHTML = overrideList
-      ? `무작위 <b>${overrideList.length}</b>개`
+      ? `복습 <b>${overrideList.length}</b>개 · ★ ${overrideList.filter(item => favorites.has(item.rank)).length}`
       : `<b>${filtered.length.toLocaleString()}</b> / 2,500`;
   }
 
@@ -1653,6 +1938,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       else { favorites.add(rank); starBtn.classList.add('active'); }
       updateFavCount();
       queueCloudSave();
+      if (overrideList) {
+        resultCount.innerHTML = `복습 <b>${overrideList.length}</b>개 · ★ ${overrideList.filter(item => favorites.has(item.rank)).length}`;
+      }
       if (favOnly) applyFilters(); // re-filter live if viewing favorites only
       return;
     }
@@ -1699,17 +1987,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   cloudSaveBtn.addEventListener('click', () => {
     clearTimeout(saveTimer);
     saveCloudState({ manual: true });
-  });
-
-  shuffleBtn.addEventListener('click', () => {
-    const pool = activePos.size > 0 ? filtered : DATA;
-    const copy = pool.slice();
-    for (let i = copy.length - 1; i > 0; i--){
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    overrideList = copy.slice(0, 10);
-    resetGrid();
   });
 
   const io = new IntersectionObserver((entries) => {

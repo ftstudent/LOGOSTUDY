@@ -893,22 +893,88 @@
     font-size: 10px;
     color: var(--brass);
   }
-  .memo-editor textarea{
+  .memo-toolbar{
+    min-height: 38px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-bottom: 0;
+    border-radius: 3px 3px 0 0;
+    background: var(--paper-dark);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .memo-format-btn,
+  .memo-color-btn{
+    width: 30px;
+    height: 30px;
+    min-height: 30px;
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
+    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .memo-format-btn{
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    font-weight: 700;
+  }
+  .memo-format-btn:hover,
+  .memo-color-btn:hover{
+    border-color: var(--line);
+    background: var(--card);
+    color: var(--ink);
+  }
+  .memo-toolbar-rule{
+    width: 1px;
+    height: 20px;
+    margin: 0 3px;
+    background: var(--line);
+  }
+  .memo-swatch{
+    width: 15px;
+    height: 15px;
+    border: 1px solid rgba(35,47,73,.18);
+    border-radius: 50%;
+    background: var(--memo-swatch);
+  }
+  .memo-color-ink{ --memo-swatch: #232f49; }
+  .memo-color-rust{ --memo-swatch: #a23e2c; }
+  .memo-color-brass{ --memo-swatch: #876928; }
+  .memo-color-teal{ --memo-swatch: #486f6b; }
+  .memo-color-plum{ --memo-swatch: #71586f; }
+  .memo-input{
     width: 100%;
     min-height: 220px;
     padding: 12px;
     border: 1px solid var(--line);
-    border-radius: 3px;
+    border-radius: 0 0 3px 3px;
     background: var(--card);
     color: var(--ink);
     outline: none;
-    resize: vertical;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
     font: 14px/1.65 'Noto Sans KR', sans-serif;
   }
-  .memo-editor textarea:focus{
+  .memo-input:empty::before{
+    content: attr(data-placeholder);
+    color: var(--ink-soft);
+    opacity: .55;
+    pointer-events: none;
+  }
+  .memo-input:focus{
     border-color: var(--rust);
     box-shadow: 0 0 0 3px rgba(162,62,44,0.12);
   }
+  .memo-input [data-memo-color="ink"]{ color: #232f49; }
+  .memo-input [data-memo-color="rust"]{ color: #a23e2c; }
+  .memo-input [data-memo-color="brass"]{ color: #876928; }
+  .memo-input [data-memo-color="teal"]{ color: #486f6b; }
+  .memo-input [data-memo-color="plum"]{ color: #71586f; }
   .memo-clear-btn{
     margin-right: auto;
     color: var(--rust);
@@ -1289,7 +1355,7 @@
     dialog.memo-dialog{
       width: calc(100vw - 24px);
     }
-    .memo-editor textarea{
+    .memo-input{
       min-height: 250px;
     }
     .card-editor-form{
@@ -1473,8 +1539,17 @@
     </div>
     <p class="dialog-target" id="memoTarget"></p>
     <div class="memo-editor">
-      <label for="memoInput">연관 단어 · 구문 · 나만의 암기법</label>
-      <textarea id="memoInput" maxlength="4000" autocomplete="off" placeholder="이 카드를 다시 볼 때 함께 떠올리고 싶은 내용을 적어두세요."></textarea>
+      <label id="memoInputLabel">연관 단어 · 구문 · 나만의 암기법</label>
+      <div class="memo-toolbar" role="toolbar" aria-label="메모 서식">
+        <button type="button" class="memo-format-btn" id="memoBoldBtn" aria-label="굵게" title="굵게">B</button>
+        <span class="memo-toolbar-rule" aria-hidden="true"></span>
+        <button type="button" class="memo-color-btn memo-color-ink" data-memo-color="ink" aria-label="잉크 남색" title="잉크 남색"><span class="memo-swatch" aria-hidden="true"></span></button>
+        <button type="button" class="memo-color-btn memo-color-rust" data-memo-color="rust" aria-label="러스트" title="러스트"><span class="memo-swatch" aria-hidden="true"></span></button>
+        <button type="button" class="memo-color-btn memo-color-brass" data-memo-color="brass" aria-label="브라스" title="브라스"><span class="memo-swatch" aria-hidden="true"></span></button>
+        <button type="button" class="memo-color-btn memo-color-teal" data-memo-color="teal" aria-label="뮤트 틸" title="뮤트 틸"><span class="memo-swatch" aria-hidden="true"></span></button>
+        <button type="button" class="memo-color-btn memo-color-plum" data-memo-color="plum" aria-label="플럼" title="플럼"><span class="memo-swatch" aria-hidden="true"></span></button>
+      </div>
+      <div id="memoInput" class="memo-input" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="memoInputLabel" data-placeholder="이 카드를 다시 볼 때 함께 떠올리고 싶은 내용을 적어두세요."></div>
     </div>
     <div class="dialog-actions">
       <button type="button" class="toggle-btn memo-clear-btn" id="memoClearBtn">메모 지우기</button>
@@ -1526,6 +1601,13 @@ const DATE_TAG_STORAGE_KEY = "spanish-vocab-date-tags:v1";
 const CUSTOM_CARDS_STORAGE_KEY = "spanish-vocab-custom-cards:v1";
 const NOTES_STORAGE_KEY = "spanish-vocab-card-notes:v1";
 const AUTO_SAVE_DELAY = 450;
+const MEMO_COLOR_VALUES = Object.freeze({
+  ink: "#232f49",
+  rust: "#a23e2c",
+  brass: "#876928",
+  teal: "#486f6b",
+  plum: "#71586f",
+});
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 (async function(){
@@ -1589,6 +1671,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const memoTarget = document.getElementById('memoTarget');
   const memoInput = document.getElementById('memoInput');
   const memoClearBtn = document.getElementById('memoClearBtn');
+  const memoBoldBtn = document.getElementById('memoBoldBtn');
+  const memoColorBtns = document.querySelectorAll('[data-memo-color]');
 
   const CHUNK = 60;
   let filtered = DATA;
@@ -1608,6 +1692,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   let pendingDateTagKey = null;
   let editingCustomCardId = null;
   let pendingMemoKey = null;
+  let savedMemoRange = null;
   let saveTimer = null;
 
   function setSyncStatus(message, type = ''){
@@ -1653,6 +1738,67 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     return /^custom:[A-Za-z0-9-]{8,}$/.test(key);
   }
 
+  function canonicalColor(value){
+    const probe = document.createElement('span');
+    probe.style.color = value || '';
+    return probe.style.color.replace(/\s/g, '').toLowerCase();
+  }
+
+  const memoColorNamesByValue = Object.fromEntries(
+    Object.entries(MEMO_COLOR_VALUES).map(([name, value]) => [canonicalColor(value), name])
+  );
+
+  function sanitizeMemoHTML(value){
+    const template = document.createElement('template');
+    template.innerHTML = String(value || '').slice(0, 20000);
+    let remaining = 4000;
+
+    function cleanNode(node){
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (remaining <= 0) return document.createTextNode('');
+        const text = node.textContent.slice(0, remaining);
+        remaining -= text.length;
+        return document.createTextNode(text);
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return document.createDocumentFragment();
+
+      const tag = node.tagName.toLowerCase();
+      if (tag === 'br') return document.createElement('br');
+
+      let clean;
+      if (tag === 'strong' || tag === 'b') {
+        clean = document.createElement('strong');
+      } else if (tag === 'span' || tag === 'font') {
+        const namedColor = MEMO_COLOR_VALUES[node.dataset.memoColor]
+          ? node.dataset.memoColor
+          : memoColorNamesByValue[canonicalColor(node.style.color || node.getAttribute('color'))];
+        clean = namedColor ? document.createElement('span') : document.createDocumentFragment();
+        if (namedColor) clean.dataset.memoColor = namedColor;
+      } else if (tag === 'div' || tag === 'p') {
+        clean = document.createElement('div');
+      } else {
+        clean = document.createDocumentFragment();
+      }
+
+      [...node.childNodes].forEach(child => clean.appendChild(cleanNode(child)));
+      return clean;
+    }
+
+    const output = document.createElement('div');
+    [...template.content.childNodes].forEach(child => output.appendChild(cleanNode(child)));
+    return output.innerHTML;
+  }
+
+  function plainTextToMemoHTML(value){
+    return escapeHTML(String(value || '')).replace(/\r?\n/g, '<br>');
+  }
+
+  function memoHTMLHasContent(html){
+    const holder = document.createElement('div');
+    holder.innerHTML = sanitizeMemoHTML(html);
+    return Boolean(holder.textContent.replace(/\u00a0/g, ' ').trim());
+  }
+
   function normalizeCardNotes(value){
     const normalized = {};
     if (!value || typeof value !== 'object' || Array.isArray(value)) return normalized;
@@ -1660,10 +1806,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       if (!isValidCardKey(key) || !raw || typeof raw !== 'object') return;
       const updatedAt = typeof raw.updatedAt === 'string' ? raw.updatedAt : '';
       if (!updatedAt) return;
-      normalized[key] = {
-        text: String(raw.text || '').slice(0, 4000),
-        updatedAt,
-      };
+      const sourceHTML = typeof raw.html === 'string'
+        ? raw.html
+        : plainTextToMemoHTML(raw.text);
+      normalized[key] = { html: sanitizeMemoHTML(sourceHTML), updatedAt };
     });
     return normalized;
   }
@@ -1691,14 +1837,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(cardNotes));
   }
 
-  function noteText(key){
-    return cardNotes[key]?.text || '';
+  function noteHTML(key){
+    return cardNotes[key]?.html || '';
   }
 
-  function setCardNote(key, text){
+  function hasCardNote(key){
+    return memoHTMLHasContent(noteHTML(key));
+  }
+
+  function setCardNote(key, html){
     if (!isValidCardKey(key)) return;
     cardNotes[key] = {
-      text: String(text || '').slice(0, 4000),
+      html: sanitizeMemoHTML(html),
       updatedAt: new Date().toISOString(),
     };
     saveLocalCardNotes();
@@ -1819,7 +1969,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   function refreshMemoButtons(){
     document.querySelectorAll('.memo-btn').forEach(btn => {
-      const hasNote = Boolean(noteText(btn.dataset.key).trim());
+      const hasNote = hasCardNote(btn.dataset.key);
       const item = itemByKey(btn.dataset.key);
       btn.classList.toggle('has-note', hasNote);
       btn.setAttribute('aria-label', `${item ? itemLabel(item) : '카드'} 메모${hasNote ? ' 있음' : ''}`);
@@ -2168,20 +2318,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     if (!item) return;
     pendingMemoKey = key;
     memoTarget.textContent = `${itemLabel(item)} · ${item.word}`;
-    memoInput.value = noteText(key);
-    memoClearBtn.hidden = !memoInput.value;
+    memoInput.innerHTML = noteHTML(key);
+    memoClearBtn.hidden = !hasCardNote(key);
     memoDialog.showModal();
     requestAnimationFrame(() => memoInput.focus());
   }
 
-  function closeMemoAfterSave(text){
+  function closeMemoAfterSave(html){
     if (!pendingMemoKey) return;
     const key = pendingMemoKey;
-    setCardNote(key, text);
+    setCardNote(key, html);
     queueCloudSave();
     const button = document.querySelector(`.memo-btn[data-key="${key}"]`);
     if (button) {
-      const hasNote = Boolean(noteText(key).trim());
+      const hasNote = hasCardNote(key);
       button.classList.toggle('has-note', hasNote);
       const item = itemByKey(key);
       button.setAttribute('aria-label', `${item ? itemLabel(item) : '카드'} 메모${hasNote ? ' 있음' : ''}`);
@@ -2192,17 +2342,61 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   memoForm.addEventListener('submit', event => {
     event.preventDefault();
-    closeMemoAfterSave(memoInput.value);
+    closeMemoAfterSave(memoInput.innerHTML);
   });
 
   memoClearBtn.addEventListener('click', () => {
     closeMemoAfterSave('');
   });
 
+  function rememberMemoSelection(){
+    const selection = window.getSelection();
+    if (!selection.rangeCount || !memoInput.contains(selection.anchorNode) || !memoInput.contains(selection.focusNode)) return;
+    savedMemoRange = selection.getRangeAt(0).cloneRange();
+  }
+
+  function restoreMemoSelection(){
+    memoInput.focus();
+    if (!savedMemoRange) return;
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(savedMemoRange);
+  }
+
+  document.addEventListener('selectionchange', () => {
+    if (memoDialog.open) rememberMemoSelection();
+  });
+
+  const memoToolbar = document.querySelector('.memo-toolbar');
+  memoToolbar.addEventListener('pointerdown', event => {
+    if (event.target.closest('button')) event.preventDefault();
+  });
+  memoToolbar.addEventListener('mousedown', event => {
+    if (event.target.closest('button')) event.preventDefault();
+  });
+
+  memoBoldBtn.addEventListener('click', () => {
+    restoreMemoSelection();
+    document.execCommand('bold', false);
+    rememberMemoSelection();
+  });
+
+  memoColorBtns.forEach(button => {
+    button.addEventListener('click', () => {
+      const color = MEMO_COLOR_VALUES[button.dataset.memoColor];
+      if (!color) return;
+      restoreMemoSelection();
+      document.execCommand('styleWithCSS', false, true);
+      document.execCommand('foreColor', false, color);
+      rememberMemoSelection();
+    });
+  });
+
   memoDialog.addEventListener('close', () => {
     pendingMemoKey = null;
+    savedMemoRange = null;
     memoTarget.textContent = '';
-    memoInput.value = '';
+    memoInput.innerHTML = '';
   });
 
   // ---- Build POS chip row ----
@@ -2398,7 +2592,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
         <hr class="divider">
         ${d.ex_es ? `<p class="example-es">${escapeHTML(d.ex_es)}</p>` : ''}
         ${d.ex_en ? `<p class="example-en${hideMeaning ? ' hidden-mode' : ''}">${escapeHTML(d.ex_en)}</p>` : ''}` : '';
-    const hasNote = Boolean(noteText(key).trim());
+    const hasNote = hasCardNote(key);
     const memoLabel = `${label} 메모${hasNote ? ' 있음' : ''}`;
     return `
       <article class="card" id="card-${d.custom ? `custom-${d.id}` : d.rank}">

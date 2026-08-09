@@ -149,6 +149,43 @@
     gap: 8px 10px;
   }
 
+  .collection-tools{
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 10px;
+  }
+  .collection-switch{
+    display: inline-flex;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--card);
+  }
+  .collection-tab{
+    min-height: 28px;
+    padding: 5px 9px;
+    border: 0;
+    background: transparent;
+    color: var(--ink-soft);
+  }
+  .collection-tab:hover{
+    border-color: transparent;
+    background: var(--paper-dark);
+    color: var(--ink);
+  }
+  .collection-tab.active{
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .custom-add-btn{
+    min-height: 32px;
+    padding: 5px 9px;
+    background: var(--rust);
+    border-color: var(--rust);
+  }
+  .custom-add-btn[hidden]{ display: none; }
+
   .field{
     position: relative;
     display: flex;
@@ -188,6 +225,7 @@
   .jump-field{ margin-top: 10px; }
 
   #jumpForm{ display:flex; gap:8px; align-items:center; }
+  #jumpForm[hidden]{ display: none; }
 
   button{
     font-family: 'IBM Plex Mono', monospace;
@@ -577,6 +615,51 @@
     opacity: .42;
   }
 
+  dialog.card-editor-dialog{
+    width: min(560px, calc(100vw - 32px));
+  }
+  .card-editor-form{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .editor-field{
+    display: grid;
+    gap: 6px;
+  }
+  .editor-field.full{ grid-column: 1 / -1; }
+  .editor-field label{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--brass);
+  }
+  .editor-field input,
+  .editor-field select,
+  .editor-field textarea{
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--card);
+    color: var(--ink);
+    outline: none;
+    font: 13px 'Noto Sans KR', sans-serif;
+  }
+  .editor-field textarea{
+    min-height: 68px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+  .editor-field input:focus,
+  .editor-field select:focus,
+  .editor-field textarea:focus{
+    border-color: var(--rust);
+    box-shadow: 0 0 0 3px rgba(162,62,44,0.12);
+  }
+  .required-mark{ color: var(--rust); }
+
   /* ---------------- Grid ---------------- */
   main{
     max-width: 1240px;
@@ -740,6 +823,26 @@
   .card-foot span{
     border-top: 1px solid var(--line-soft);
     padding-top: 6px;
+  }
+  .custom-card-actions{
+    display: inline-flex;
+    gap: 5px;
+    margin-right: auto;
+  }
+  .custom-card-action{
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
+    padding: 0;
+    border-color: var(--line);
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 15px;
+  }
+  .custom-card-action:hover{
+    color: var(--rust);
+    background: var(--paper-dark);
+    border-color: var(--rust);
   }
 
   .card-date-tags{
@@ -959,6 +1062,21 @@
     .controls > *{
       min-width: 0;
     }
+    .collection-tools{
+      grid-column: 1 / -1;
+      margin-top: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .collection-switch{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .collection-tab{
+      min-width: 0;
+      padding: 6px 5px;
+      white-space: nowrap;
+    }
     .search-field,
     .jump-field,
     .data-actions{
@@ -1096,6 +1214,14 @@
     dialog.review-dialog{
       width: calc(100vw - 24px);
     }
+    dialog.card-editor-dialog{
+      width: calc(100vw - 24px);
+    }
+    .card-editor-form{
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+    }
+    .editor-field.full{ grid-column: auto; }
     .review-date-list{
       max-height: min(260px, calc(100dvh - 350px));
     }
@@ -1127,6 +1253,13 @@
   </button>
   <div class="controls-panel" id="controlsPanel">
   <div class="controls">
+    <div class="collection-tools">
+      <div class="collection-switch" role="tablist" aria-label="단어 세트 선택">
+        <button type="button" class="collection-tab active" id="builtinSetBtn" role="tab" aria-selected="true">빈도사전</button>
+        <button type="button" class="collection-tab" id="customSetBtn" role="tab" aria-selected="false">내가 추가한 세트</button>
+      </div>
+      <button type="button" class="custom-add-btn" id="customAddBtn" aria-haspopup="dialog" hidden>+ 단어 추가</button>
+    </div>
     <div class="field search-field">
       <span class="field-label">검색</span>
       <input type="search" id="searchInput" placeholder="스페인어 · 영어 뜻 · 예문 검색" autocomplete="off">
@@ -1222,6 +1355,41 @@
   </form>
 </dialog>
 
+<dialog id="cardEditorDialog" class="card-editor-dialog" aria-labelledby="cardEditorTitle">
+  <form id="cardEditorForm" class="dialog-shell">
+    <div class="dialog-head">
+      <h2 class="dialog-title" id="cardEditorTitle">내 단어 추가</h2>
+      <button type="button" class="dialog-close" data-dialog-close="cardEditorDialog" aria-label="닫기">×</button>
+    </div>
+    <div class="card-editor-form">
+      <div class="editor-field">
+        <label for="customWordInput">스페인어 <span class="required-mark">필수</span></label>
+        <input type="text" id="customWordInput" autocomplete="off" required maxlength="120">
+      </div>
+      <div class="editor-field">
+        <label for="customMeaningInput">뜻 <span class="required-mark">필수</span></label>
+        <input type="text" id="customMeaningInput" autocomplete="off" required maxlength="300">
+      </div>
+      <div class="editor-field full">
+        <label for="customPosInput">품사</label>
+        <select id="customPosInput"></select>
+      </div>
+      <div class="editor-field full">
+        <label for="customExampleEsInput">스페인어 예문</label>
+        <textarea id="customExampleEsInput" maxlength="600"></textarea>
+      </div>
+      <div class="editor-field full">
+        <label for="customExampleEnInput">예문 해석</label>
+        <textarea id="customExampleEnInput" maxlength="600"></textarea>
+      </div>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="toggle-btn" data-dialog-close="cardEditorDialog">취소</button>
+      <button type="submit" id="cardEditorSubmitBtn">추가</button>
+    </div>
+  </form>
+</dialog>
+
 <main>
   <div id="grid"></div>
   <div id="sentinel"></div>
@@ -1257,8 +1425,10 @@ const CLOUD_TABLE = "study_public_state";
 const CLOUD_ROW_ID = "default";
 const CLOUD_DATA_KEY = "spanishVocabFavorites";
 const CLOUD_DATE_TAGS_KEY = "spanishVocabDateTags";
+const CLOUD_CUSTOM_CARDS_KEY = "spanishVocabCustomCards";
 const STORAGE_KEY = "spanish-vocab-favorites:v1";
 const DATE_TAG_STORAGE_KEY = "spanish-vocab-date-tags:v1";
+const CUSTOM_CARDS_STORAGE_KEY = "spanish-vocab-custom-cards:v1";
 const AUTO_SAVE_DELAY = 450;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -1306,6 +1476,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const dateTagTarget = document.getElementById('dateTagTarget');
   const dateTagInput = document.getElementById('dateTagInput');
   const dateTagSaveBtn = document.getElementById('dateTagSaveBtn');
+  const builtinSetBtn = document.getElementById('builtinSetBtn');
+  const customSetBtn = document.getElementById('customSetBtn');
+  const customAddBtn = document.getElementById('customAddBtn');
+  const cardEditorDialog = document.getElementById('cardEditorDialog');
+  const cardEditorForm = document.getElementById('cardEditorForm');
+  const cardEditorTitle = document.getElementById('cardEditorTitle');
+  const cardEditorSubmitBtn = document.getElementById('cardEditorSubmitBtn');
+  const customWordInput = document.getElementById('customWordInput');
+  const customMeaningInput = document.getElementById('customMeaningInput');
+  const customPosInput = document.getElementById('customPosInput');
+  const customExampleEsInput = document.getElementById('customExampleEsInput');
+  const customExampleEnInput = document.getElementById('customExampleEnInput');
 
   const CHUNK = 60;
   let filtered = DATA;
@@ -1315,11 +1497,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   let overrideList = null; // used for shuffle mode
   let favorites = localFavorites();
   let dateTags = localDateTags();
+  let customCards = localCustomCards();
+  let currentCollection = 'builtin';
   let favOnly = false;
   let activeDateFilter = '';
   let selectedReviewDates = new Set();
   let reviewSelectionInitialized = false;
-  let pendingDateTagRank = null;
+  let pendingDateTagKey = null;
+  let editingCustomCardId = null;
   let saveTimer = null;
 
   function setSyncStatus(message, type = ''){
@@ -1359,6 +1544,87 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     return merged;
   }
 
+  function normalizeCustomCards(value){
+    if (!Array.isArray(value)) return [];
+    const byId = new Map();
+    value.forEach(raw => {
+      if (!raw || typeof raw !== 'object' || typeof raw.id !== 'string' || !raw.id) return;
+      const seq = Number(raw.seq);
+      const updatedAt = typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date(0).toISOString();
+      const card = {
+        id: raw.id,
+        seq: Number.isInteger(seq) && seq > 0 ? seq : 1,
+        custom: true,
+        word: String(raw.word || '').trim().slice(0, 120),
+        en: String(raw.en || '').trim().slice(0, 300),
+        pos: String(raw.pos || 'n').slice(0, 20),
+        pos_kr: String(raw.pos_kr || '명사(성 미표기)').slice(0, 40),
+        ex_es: String(raw.ex_es || '').trim().slice(0, 600),
+        ex_en: String(raw.ex_en || '').trim().slice(0, 600),
+        favorite: Boolean(raw.favorite),
+        dates: Array.isArray(raw.dates) ? [...new Set(raw.dates.filter(isValidDateTag))].sort() : [],
+        createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : updatedAt,
+        updatedAt,
+        deletedAt: typeof raw.deletedAt === 'string' ? raw.deletedAt : '',
+      };
+      const previous = byId.get(card.id);
+      if (!previous || card.updatedAt >= previous.updatedAt) byId.set(card.id, card);
+    });
+    return [...byId.values()].sort((a, b) => a.seq - b.seq || a.createdAt.localeCompare(b.createdAt));
+  }
+
+  function mergeCustomCards(...lists){
+    return normalizeCustomCards(lists.flat());
+  }
+
+  function localCustomCards(){
+    try {
+      return normalizeCustomCards(JSON.parse(localStorage.getItem(CUSTOM_CARDS_STORAGE_KEY) || '[]'));
+    } catch {
+      return [];
+    }
+  }
+
+  function saveLocalCustomCards(){
+    customCards = normalizeCustomCards(customCards);
+    localStorage.setItem(CUSTOM_CARDS_STORAGE_KEY, JSON.stringify(customCards));
+  }
+
+  function visibleCustomCards(){
+    return customCards.filter(card => !card.deletedAt);
+  }
+
+  function currentSource(){
+    return currentCollection === 'custom' ? visibleCustomCards() : DATA;
+  }
+
+  function itemKey(item){
+    return item.custom ? `custom:${item.id}` : `rank:${item.rank}`;
+  }
+
+  function itemLabel(item){
+    return item.custom ? `MY ${String(item.seq).padStart(3, '0')}` : `#${item.rank}`;
+  }
+
+  function itemByKey(key){
+    if (key?.startsWith('custom:')) return customCards.find(item => item.id === key.slice(7));
+    if (key?.startsWith('rank:')) return DATA.find(item => item.rank === Number(key.slice(5)));
+    return null;
+  }
+
+  function isFavorite(item){
+    return item.custom ? item.favorite : favorites.has(item.rank);
+  }
+
+  function itemDates(item){
+    return item.custom ? item.dates : (dateTags[item.rank] || []);
+  }
+
+  function touchCustomCard(item){
+    item.updatedAt = new Date().toISOString();
+    saveLocalCustomCards();
+  }
+
   function localFavorites(){
     try {
       return new Set(validRanks(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')));
@@ -1386,8 +1652,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   function refreshFavoriteButtons(){
     document.querySelectorAll('.star-btn').forEach(btn => {
-      const rank = parseInt(btn.dataset.rank, 10);
-      btn.classList.toggle('active', favorites.has(rank));
+      const item = itemByKey(btn.dataset.key);
+      btn.classList.toggle('active', Boolean(item && isFavorite(item)));
     });
   }
 
@@ -1403,10 +1669,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
       const remoteRanks = validRanks(data?.data?.[CLOUD_DATA_KEY]);
       const remoteDateTags = normalizeDateTags(data?.data?.[CLOUD_DATE_TAGS_KEY]);
+      const remoteCustomCards = normalizeCustomCards(data?.data?.[CLOUD_CUSTOM_CARDS_KEY]);
       favorites = new Set([...favorites, ...remoteRanks]);
       dateTags = mergeDateTags(dateTags, remoteDateTags);
+      customCards = mergeCustomCards(customCards, remoteCustomCards);
       saveLocalFavorites();
       saveLocalDateTags();
+      saveLocalCustomCards();
       updateFavCount();
       refreshFavoriteButtons();
       refreshDateTagRows();
@@ -1428,6 +1697,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   async function saveCloudState({ manual = false } = {}){
     saveLocalFavorites();
     saveLocalDateTags();
+    saveLocalCustomCards();
     try {
       setSyncStatus(manual ? '클라우드에 수동 저장 중...' : '클라우드에 학습 데이터 저장 중...');
       const { data: current, error: loadError } = await supabase
@@ -1441,6 +1711,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
         ...(current?.data || {}),
         [CLOUD_DATA_KEY]: Array.from(favorites).sort((a,b) => a-b),
         [CLOUD_DATE_TAGS_KEY]: normalizeDateTags(dateTags),
+        [CLOUD_CUSTOM_CARDS_KEY]: normalizeCustomCards(customCards),
       };
       const { error } = await supabase
         .from(CLOUD_TABLE)
@@ -1457,39 +1728,42 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   function queueCloudSave(){
     saveLocalFavorites();
     saveLocalDateTags();
+    saveLocalCustomCards();
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveCloudState, AUTO_SAVE_DELAY);
   }
 
   function updateFavCount(){
-    favCount.textContent = favorites.size;
+    const count = currentSource().filter(isFavorite).length;
+    favCount.textContent = count;
   }
 
   function formatDateTag(date){
     return date.replace(/-/g, '.');
   }
 
-  function cardDateTagsInnerHTML(rank){
-    const tags = dateTags[rank] || [];
+  function cardDateTagsInnerHTML(item){
+    const key = itemKey(item);
+    const tags = itemDates(item);
     return tags.map(date => `
       <span class="date-tag-chip">
         <span>${formatDateTag(date)}</span>
-        <button type="button" class="date-tag-remove" data-rank="${rank}" data-date="${date}" aria-label="${formatDateTag(date)} 태그 삭제">×</button>
+        <button type="button" class="date-tag-remove" data-key="${key}" data-date="${date}" aria-label="${formatDateTag(date)} 태그 삭제">×</button>
       </span>`).join('') + `
-      <button type="button" class="date-tag-add" data-rank="${rank}" aria-label="날짜 태그 추가">+ 날짜</button>`;
+      <button type="button" class="date-tag-add" data-key="${key}" aria-label="날짜 태그 추가">+ 날짜</button>`;
   }
 
   function refreshDateTagRows(){
-    document.querySelectorAll('[data-date-tags-rank]').forEach(row => {
-      const rank = parseInt(row.dataset.dateTagsRank, 10);
-      row.innerHTML = cardDateTagsInnerHTML(rank);
+    document.querySelectorAll('[data-date-tags-key]').forEach(row => {
+      const item = itemByKey(row.dataset.dateTagsKey);
+      if (item) row.innerHTML = cardDateTagsInnerHTML(item);
     });
   }
 
-  function dateTagCounts(){
+  function dateTagCounts(items = [...DATA, ...visibleCustomCards()]){
     const counts = new Map();
-    Object.values(dateTags).forEach(dates => {
-      dates.forEach(date => counts.set(date, (counts.get(date) || 0) + 1));
+    items.forEach(item => {
+      itemDates(item).forEach(date => counts.set(date, (counts.get(date) || 0) + 1));
     });
     return [...counts.entries()].sort(([a], [b]) => b.localeCompare(a));
   }
@@ -1501,11 +1775,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   }
 
   function renderDateFilterList(){
-    const entries = dateTagCounts();
+    const source = currentSource();
+    const entries = dateTagCounts(source);
     const allActive = activeDateFilter === '' ? ' active' : '';
     const options = [`
       <button type="button" class="date-filter-option${allActive}" data-filter-date="">
-        <span>전체 날짜</span><span class="count">${DATA.length.toLocaleString()}</span>
+        <span>전체 날짜</span><span class="count">${source.length.toLocaleString()}</span>
       </button>`];
     entries.forEach(([date, count]) => {
       const active = date === activeDateFilter ? ' active' : '';
@@ -1520,14 +1795,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   function reviewPool(){
     if (!selectedReviewDates.size) return [];
-    return DATA.filter(item =>
-      (dateTags[item.rank] || []).some(date => selectedReviewDates.has(date))
+    return [...DATA, ...visibleCustomCards()].filter(item =>
+      itemDates(item).some(date => selectedReviewDates.has(date))
     );
   }
 
   function updateReviewSummary(){
     const pool = reviewPool();
-    const availableFavorites = pool.filter(item => favorites.has(item.rank)).length;
+    const availableFavorites = pool.filter(isFavorite).length;
     const requestedTotal = Math.max(1, parseInt(reviewTotalInput.value, 10) || 1);
     const plannedTotal = Math.min(requestedTotal, pool.length);
     const requestedFavorites = Math.max(0, parseInt(reviewFavoriteInput.value, 10) || 0);
@@ -1586,7 +1861,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     favOnlyChip.classList.remove('active');
     activeDateFilter = '';
     updateDateFilterButton();
-    filtered = DATA;
+    filtered = currentSource();
   }
 
   function defaultStudyDate(now = new Date()){
@@ -1598,13 +1873,118 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     return `${year}-${month}-${day}`;
   }
 
-  function openDateTagDialog(rank){
-    const word = DATA.find(item => item.rank === rank);
-    pendingDateTagRank = rank;
-    dateTagTarget.textContent = `#${rank} · ${word?.word || ''}`;
+  function openDateTagDialog(key){
+    const item = itemByKey(key);
+    if (!item) return;
+    pendingDateTagKey = key;
+    dateTagTarget.textContent = `${itemLabel(item)} · ${item.word}`;
     dateTagInput.value = defaultStudyDate();
     dateTagDialog.showModal();
   }
+
+  function updateCollectionUI(){
+    const custom = currentCollection === 'custom';
+    builtinSetBtn.classList.toggle('active', !custom);
+    builtinSetBtn.setAttribute('aria-selected', custom ? 'false' : 'true');
+    customSetBtn.classList.toggle('active', custom);
+    customSetBtn.setAttribute('aria-selected', custom ? 'true' : 'false');
+    customAddBtn.hidden = !custom;
+    jumpForm.hidden = custom;
+    searchInput.placeholder = custom
+      ? '내 단어 · 뜻 · 예문 검색'
+      : '스페인어 · 영어 뜻 · 예문 검색';
+    updateFavCount();
+  }
+
+  function switchCollection(collection){
+    if (currentCollection === collection) return;
+    currentCollection = collection;
+    searchInput.value = '';
+    activePos.clear();
+    document.querySelectorAll('.pos-chip.active').forEach(chip => chip.classList.remove('active'));
+    favOnly = false;
+    favOnlyChip.classList.remove('active');
+    activeDateFilter = '';
+    overrideList = null;
+    updateCollectionUI();
+    updatePosToggle();
+    updateDateFilterButton();
+    applyFilters();
+  }
+
+  function openCardEditor(item = null){
+    editingCustomCardId = item?.id || null;
+    cardEditorTitle.textContent = item ? `${itemLabel(item)} 수정` : '내 단어 추가';
+    cardEditorSubmitBtn.textContent = item ? '저장' : '추가';
+    customWordInput.value = item?.word || '';
+    customMeaningInput.value = item?.en || '';
+    customPosInput.value = item?.pos || LEGEND[0]?.abbr || 'n';
+    customExampleEsInput.value = item?.ex_es || '';
+    customExampleEnInput.value = item?.ex_en || '';
+    cardEditorDialog.showModal();
+    requestAnimationFrame(() => customWordInput.focus());
+  }
+
+  LEGEND.forEach(item => {
+    const option = document.createElement('option');
+    option.value = item.abbr;
+    option.textContent = `${item.abbr} · ${item.kr}`;
+    customPosInput.appendChild(option);
+  });
+
+  builtinSetBtn.addEventListener('click', () => switchCollection('builtin'));
+  customSetBtn.addEventListener('click', () => switchCollection('custom'));
+  customAddBtn.addEventListener('click', () => openCardEditor());
+
+  cardEditorForm.addEventListener('submit', event => {
+    event.preventDefault();
+    if (!cardEditorForm.reportValidity()) return;
+    const selectedPos = LEGEND.find(item => item.abbr === customPosInput.value) || LEGEND[0];
+    const now = new Date().toISOString();
+    let item = editingCustomCardId
+      ? customCards.find(card => card.id === editingCustomCardId && !card.deletedAt)
+      : null;
+    if (item) {
+      Object.assign(item, {
+        word: customWordInput.value.trim(),
+        en: customMeaningInput.value.trim(),
+        pos: selectedPos.abbr,
+        pos_kr: selectedPos.kr,
+        ex_es: customExampleEsInput.value.trim(),
+        ex_en: customExampleEnInput.value.trim(),
+        updatedAt: now,
+      });
+    } else {
+      const nextSeq = customCards.reduce((max, card) => Math.max(max, card.seq || 0), 0) + 1;
+      item = {
+        id: crypto.randomUUID(),
+        seq: nextSeq,
+        custom: true,
+        word: customWordInput.value.trim(),
+        en: customMeaningInput.value.trim(),
+        pos: selectedPos.abbr,
+        pos_kr: selectedPos.kr,
+        ex_es: customExampleEsInput.value.trim(),
+        ex_en: customExampleEnInput.value.trim(),
+        favorite: false,
+        dates: [],
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: '',
+      };
+      customCards.push(item);
+    }
+    saveLocalCustomCards();
+    queueCloudSave();
+    overrideList = null;
+    cardEditorDialog.close();
+    applyFilters();
+  });
+
+  cardEditorDialog.addEventListener('close', () => {
+    editingCustomCardId = null;
+    cardEditorForm.reset();
+  });
 
   // ---- Build POS chip row ----
   function updatePosToggle(){
@@ -1739,11 +2119,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     const requestedTotal = Math.max(1, parseInt(reviewTotalInput.value, 10) || 1);
     const total = Math.min(requestedTotal, pool.length);
     const requestedFavorites = Math.max(0, parseInt(reviewFavoriteInput.value, 10) || 0);
-    const favoritePool = pool.filter(item => favorites.has(item.rank));
+    const favoritePool = pool.filter(isFavorite);
     const guaranteedCount = Math.min(requestedFavorites, favoritePool.length, total);
     const guaranteed = shuffleArray(favoritePool).slice(0, guaranteedCount);
-    const guaranteedRanks = new Set(guaranteed.map(item => item.rank));
-    const remainder = pool.filter(item => !guaranteedRanks.has(item.rank));
+    const guaranteedKeys = new Set(guaranteed.map(itemKey));
+    const remainder = pool.filter(item => !guaranteedKeys.has(itemKey(item)));
     const selected = guaranteed.concat(shuffleArray(remainder).slice(0, total - guaranteed.length));
 
     reviewTotalInput.value = String(total);
@@ -1759,44 +2139,60 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   });
 
   dateTagSaveBtn.addEventListener('click', () => {
-    if (!dateTagInput.reportValidity() || pendingDateTagRank === null) return;
+    if (!dateTagInput.reportValidity() || pendingDateTagKey === null) return;
     const date = dateTagInput.value;
     if (!isValidDateTag(date)) return;
-    const tags = new Set(dateTags[pendingDateTagRank] || []);
+    const item = itemByKey(pendingDateTagKey);
+    if (!item) return;
+    const tags = new Set(itemDates(item));
     tags.add(date);
-    dateTags[pendingDateTagRank] = [...tags].sort();
-    saveLocalDateTags();
-    const row = document.querySelector(`[data-date-tags-rank="${pendingDateTagRank}"]`);
-    if (row) row.innerHTML = cardDateTagsInnerHTML(pendingDateTagRank);
+    if (item.custom) {
+      item.dates = [...tags].sort();
+      touchCustomCard(item);
+    } else {
+      dateTags[item.rank] = [...tags].sort();
+      saveLocalDateTags();
+    }
+    const row = document.querySelector(`[data-date-tags-key="${pendingDateTagKey}"]`);
+    if (row) row.innerHTML = cardDateTagsInnerHTML(item);
     renderDateFilterList();
     queueCloudSave();
     dateTagDialog.close();
-    pendingDateTagRank = null;
+    pendingDateTagKey = null;
   });
 
   dateTagDialog.addEventListener('close', () => {
-    pendingDateTagRank = null;
+    pendingDateTagKey = null;
     dateTagInput.value = '';
   });
 
   // ---- Card rendering ----
   function cardHTML(d){
+    const key = itemKey(d);
+    const label = itemLabel(d);
+    const customActions = d.custom ? `
+      <span class="custom-card-actions">
+        <button type="button" class="custom-card-action custom-edit-btn" data-id="${d.id}" aria-label="${label} 수정" title="수정">✎</button>
+        <button type="button" class="custom-card-action custom-delete-btn" data-id="${d.id}" aria-label="${label} 삭제" title="삭제">×</button>
+      </span>` : '';
+    const exampleBlock = d.ex_es || d.ex_en ? `
+        <hr class="divider">
+        ${d.ex_es ? `<p class="example-es">${escapeHTML(d.ex_es)}</p>` : ''}
+        ${d.ex_en ? `<p class="example-en${hideMeaning ? ' hidden-mode' : ''}">${escapeHTML(d.ex_en)}</p>` : ''}` : '';
     return `
-      <article class="card" id="card-${d.rank}">
+      <article class="card" id="card-${d.custom ? `custom-${d.id}` : d.rank}">
         <div class="card-top">
           <span class="rank-group">
-            <span class="rank-tab">#${d.rank}</span>
-            <button type="button" class="star-btn${favorites.has(d.rank) ? ' active' : ''}" data-rank="${d.rank}" aria-label="즐겨찾기"></button>
+            <span class="rank-tab">${label}</span>
+            <button type="button" class="star-btn${isFavorite(d) ? ' active' : ''}" data-key="${key}" aria-label="즐겨찾기"></button>
           </span>
           <span class="pos-tag">${d.pos}<span class="kr">${d.pos_kr}</span></span>
         </div>
         <h2 class="headword">${escapeHTML(d.word)}</h2>
         <p class="meaning${hideMeaning ? ' hidden-mode' : ''}">${escapeHTML(d.en)}</p>
-        <hr class="divider">
-        <p class="example-es">${escapeHTML(d.ex_es)}</p>
-        <p class="example-en${hideMeaning ? ' hidden-mode' : ''}">${escapeHTML(d.ex_en)}</p>
-        <div class="card-date-tags" data-date-tags-rank="${d.rank}">${cardDateTagsInnerHTML(d.rank)}</div>
-        <div class="card-foot"><span>p. ${d.page}</span></div>
+        ${exampleBlock}
+        <div class="card-date-tags" data-date-tags-key="${key}">${cardDateTagsInnerHTML(d)}</div>
+        <div class="card-foot">${customActions}${d.custom ? '<span>my set</span>' : `<span>p. ${d.page}</span>`}</div>
       </article>`;
   }
 
@@ -1820,21 +2216,24 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     renderedCount = 0;
     const source = overrideList || filtered;
     if (source.length === 0){
-      grid.innerHTML = '<div class="empty-state">일치하는 단어가 없습니다. 검색어나 필터를 확인해 보세요.</div>';
-      resultCount.innerHTML = `<b>0</b> / 2,500`;
+      const message = currentCollection === 'custom' && visibleCustomCards().length === 0
+        ? '아직 추가한 단어가 없습니다. 위의 + 단어 추가로 첫 카드를 만들어 보세요.'
+        : '일치하는 단어가 없습니다. 검색어나 필터를 확인해 보세요.';
+      grid.innerHTML = `<div class="empty-state">${message}</div>`;
+      resultCount.innerHTML = `<b>0</b> / ${currentSource().length.toLocaleString()}`;
       return;
     }
     renderNextChunk();
     resultCount.innerHTML = overrideList
-      ? `복습 <b>${overrideList.length}</b>개 · ★ ${overrideList.filter(item => favorites.has(item.rank)).length}`
-      : `<b>${filtered.length.toLocaleString()}</b> / 2,500`;
+      ? `복습 <b>${overrideList.length}</b>개 · ★ ${overrideList.filter(isFavorite).length}`
+      : `<b>${filtered.length.toLocaleString()}</b> / ${currentSource().length.toLocaleString()}`;
   }
 
   function applyFilters(){
     const q = searchInput.value.trim().toLowerCase();
-    filtered = DATA.filter(d => {
-      if (favOnly && !favorites.has(d.rank)) return false;
-      if (activeDateFilter && !(dateTags[d.rank] || []).includes(activeDateFilter)) return false;
+    filtered = currentSource().filter(d => {
+      if (favOnly && !isFavorite(d)) return false;
+      if (activeDateFilter && !itemDates(d).includes(activeDateFilter)) return false;
       if (activePos.size > 0 && !activePos.has(d.pos)) return false;
       if (!q) return true;
       return (
@@ -1900,24 +2299,50 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   });
 
   grid.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.custom-edit-btn');
+    if (editBtn){
+      const item = customCards.find(card => card.id === editBtn.dataset.id && !card.deletedAt);
+      if (item) openCardEditor(item);
+      return;
+    }
+
+    const deleteBtn = e.target.closest('.custom-delete-btn');
+    if (deleteBtn){
+      const item = customCards.find(card => card.id === deleteBtn.dataset.id && !card.deletedAt);
+      if (!item || !confirm(`“${item.word}” 카드를 삭제할까요?`)) return;
+      item.deletedAt = new Date().toISOString();
+      item.updatedAt = item.deletedAt;
+      saveLocalCustomCards();
+      queueCloudSave();
+      overrideList = overrideList?.filter(card => itemKey(card) !== itemKey(item)) || null;
+      applyFilters();
+      return;
+    }
+
     const addDateBtn = e.target.closest('.date-tag-add');
     if (addDateBtn){
-      openDateTagDialog(parseInt(addDateBtn.dataset.rank, 10));
+      openDateTagDialog(addDateBtn.dataset.key);
       return;
     }
 
     const removeDateBtn = e.target.closest('.date-tag-remove');
     if (removeDateBtn){
-      const rank = parseInt(removeDateBtn.dataset.rank, 10);
+      const item = itemByKey(removeDateBtn.dataset.key);
+      if (!item) return;
       const date = removeDateBtn.dataset.date;
-      const nextDates = (dateTags[rank] || []).filter(item => item !== date);
-      if (nextDates.length) dateTags[rank] = nextDates;
-      else delete dateTags[rank];
-      saveLocalDateTags();
+      const nextDates = itemDates(item).filter(itemDate => itemDate !== date);
+      if (item.custom) {
+        item.dates = nextDates;
+        touchCustomCard(item);
+      } else {
+        if (nextDates.length) dateTags[item.rank] = nextDates;
+        else delete dateTags[item.rank];
+        saveLocalDateTags();
+      }
       queueCloudSave();
       renderDateFilterList();
       if (activeDateFilter === date) {
-        const dateStillExists = Object.values(dateTags).some(dates => dates.includes(date));
+        const dateStillExists = currentSource().some(card => itemDates(card).includes(date));
         if (!dateStillExists) {
           activeDateFilter = '';
           updateDateFilterButton();
@@ -1925,21 +2350,29 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
         applyFilters();
       }
       else {
-        const row = document.querySelector(`[data-date-tags-rank="${rank}"]`);
-        if (row) row.innerHTML = cardDateTagsInnerHTML(rank);
+        const row = document.querySelector(`[data-date-tags-key="${itemKey(item)}"]`);
+        if (row) row.innerHTML = cardDateTagsInnerHTML(item);
       }
       return;
     }
 
     const starBtn = e.target.closest('.star-btn');
     if (starBtn){
-      const rank = parseInt(starBtn.dataset.rank, 10);
-      if (favorites.has(rank)){ favorites.delete(rank); starBtn.classList.remove('active'); }
-      else { favorites.add(rank); starBtn.classList.add('active'); }
+      const item = itemByKey(starBtn.dataset.key);
+      if (!item) return;
+      if (item.custom) {
+        item.favorite = !item.favorite;
+        touchCustomCard(item);
+      } else if (favorites.has(item.rank)) {
+        favorites.delete(item.rank);
+      } else {
+        favorites.add(item.rank);
+      }
+      starBtn.classList.toggle('active', isFavorite(item));
       updateFavCount();
       queueCloudSave();
       if (overrideList) {
-        resultCount.innerHTML = `복습 <b>${overrideList.length}</b>개 · ★ ${overrideList.filter(item => favorites.has(item.rank)).length}`;
+        resultCount.innerHTML = `복습 <b>${overrideList.length}</b>개 · ★ ${overrideList.filter(isFavorite).length}`;
       }
       if (favOnly) applyFilters(); // re-filter live if viewing favorites only
       return;
@@ -1997,6 +2430,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   io.observe(sentinel);
 
   await loadCloudState();
+  updateCollectionUI();
   updateFavCount();
   updateDateFilterButton();
   updatePosToggle();

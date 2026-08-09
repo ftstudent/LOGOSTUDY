@@ -815,19 +815,26 @@
 
   .card-foot{
     display: flex;
+    align-items: center;
+    gap: 8px;
     justify-content: flex-end;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10.5px;
     color: var(--line);
   }
-  .card-foot span{
+  .card-foot > .page-ref{
     border-top: 1px solid var(--line-soft);
     padding-top: 6px;
+  }
+  .card-tools{
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-right: auto;
   }
   .custom-card-actions{
     display: inline-flex;
     gap: 5px;
-    margin-right: auto;
   }
   .custom-card-action{
     width: 28px;
@@ -843,6 +850,68 @@
     color: var(--rust);
     background: var(--paper-dark);
     border-color: var(--rust);
+  }
+  .memo-btn{
+    min-height: 28px;
+    padding: 4px 8px;
+    border-color: var(--line);
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .memo-btn:hover,
+  .memo-btn.has-note{
+    border-color: var(--brass);
+    background: var(--paper-dark);
+    color: var(--brass);
+  }
+  .memo-dot{
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .25;
+  }
+  .memo-btn.has-note .memo-dot{
+    background: var(--rust);
+    opacity: 1;
+  }
+
+  dialog.memo-dialog{
+    width: min(520px, calc(100vw - 32px));
+  }
+  .memo-editor{
+    display: grid;
+    gap: 7px;
+    margin-top: 14px;
+  }
+  .memo-editor label{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--brass);
+  }
+  .memo-editor textarea{
+    width: 100%;
+    min-height: 220px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--card);
+    color: var(--ink);
+    outline: none;
+    resize: vertical;
+    font: 14px/1.65 'Noto Sans KR', sans-serif;
+  }
+  .memo-editor textarea:focus{
+    border-color: var(--rust);
+    box-shadow: 0 0 0 3px rgba(162,62,44,0.12);
+  }
+  .memo-clear-btn{
+    margin-right: auto;
+    color: var(--rust);
   }
 
   .card-date-tags{
@@ -1217,6 +1286,12 @@
     dialog.card-editor-dialog{
       width: calc(100vw - 24px);
     }
+    dialog.memo-dialog{
+      width: calc(100vw - 24px);
+    }
+    .memo-editor textarea{
+      min-height: 250px;
+    }
     .card-editor-form{
       grid-template-columns: minmax(0, 1fr);
       gap: 10px;
@@ -1390,6 +1465,25 @@
   </form>
 </dialog>
 
+<dialog id="memoDialog" class="memo-dialog" aria-labelledby="memoDialogTitle">
+  <form id="memoForm" class="dialog-shell">
+    <div class="dialog-head">
+      <h2 class="dialog-title" id="memoDialogTitle">학습 메모</h2>
+      <button type="button" class="dialog-close" data-dialog-close="memoDialog" aria-label="닫기">×</button>
+    </div>
+    <p class="dialog-target" id="memoTarget"></p>
+    <div class="memo-editor">
+      <label for="memoInput">연관 단어 · 구문 · 나만의 암기법</label>
+      <textarea id="memoInput" maxlength="4000" autocomplete="off" placeholder="이 카드를 다시 볼 때 함께 떠올리고 싶은 내용을 적어두세요."></textarea>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="toggle-btn memo-clear-btn" id="memoClearBtn">메모 지우기</button>
+      <button type="button" class="toggle-btn" data-dialog-close="memoDialog">취소</button>
+      <button type="submit">저장</button>
+    </div>
+  </form>
+</dialog>
+
 <main>
   <div id="grid"></div>
   <div id="sentinel"></div>
@@ -1426,9 +1520,11 @@ const CLOUD_ROW_ID = "default";
 const CLOUD_DATA_KEY = "spanishVocabFavorites";
 const CLOUD_DATE_TAGS_KEY = "spanishVocabDateTags";
 const CLOUD_CUSTOM_CARDS_KEY = "spanishVocabCustomCards";
+const CLOUD_NOTES_KEY = "spanishVocabCardNotes";
 const STORAGE_KEY = "spanish-vocab-favorites:v1";
 const DATE_TAG_STORAGE_KEY = "spanish-vocab-date-tags:v1";
 const CUSTOM_CARDS_STORAGE_KEY = "spanish-vocab-custom-cards:v1";
+const NOTES_STORAGE_KEY = "spanish-vocab-card-notes:v1";
 const AUTO_SAVE_DELAY = 450;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -1488,6 +1584,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const customPosInput = document.getElementById('customPosInput');
   const customExampleEsInput = document.getElementById('customExampleEsInput');
   const customExampleEnInput = document.getElementById('customExampleEnInput');
+  const memoDialog = document.getElementById('memoDialog');
+  const memoForm = document.getElementById('memoForm');
+  const memoTarget = document.getElementById('memoTarget');
+  const memoInput = document.getElementById('memoInput');
+  const memoClearBtn = document.getElementById('memoClearBtn');
 
   const CHUNK = 60;
   let filtered = DATA;
@@ -1498,6 +1599,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   let favorites = localFavorites();
   let dateTags = localDateTags();
   let customCards = localCustomCards();
+  let cardNotes = localCardNotes();
   let currentCollection = 'builtin';
   let favOnly = false;
   let activeDateFilter = '';
@@ -1505,6 +1607,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   let reviewSelectionInitialized = false;
   let pendingDateTagKey = null;
   let editingCustomCardId = null;
+  let pendingMemoKey = null;
   let saveTimer = null;
 
   function setSyncStatus(message, type = ''){
@@ -1542,6 +1645,63 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       });
     });
     return merged;
+  }
+
+  function isValidCardKey(key){
+    if (typeof key !== 'string') return false;
+    if (/^rank:(?:[1-9]|[1-9]\d{1,2}|1\d{3}|2[0-4]\d{2}|2500)$/.test(key)) return true;
+    return /^custom:[A-Za-z0-9-]{8,}$/.test(key);
+  }
+
+  function normalizeCardNotes(value){
+    const normalized = {};
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return normalized;
+    Object.entries(value).forEach(([key, raw]) => {
+      if (!isValidCardKey(key) || !raw || typeof raw !== 'object') return;
+      const updatedAt = typeof raw.updatedAt === 'string' ? raw.updatedAt : '';
+      if (!updatedAt) return;
+      normalized[key] = {
+        text: String(raw.text || '').slice(0, 4000),
+        updatedAt,
+      };
+    });
+    return normalized;
+  }
+
+  function mergeCardNotes(...maps){
+    const merged = {};
+    maps.forEach(map => {
+      Object.entries(normalizeCardNotes(map)).forEach(([key, note]) => {
+        if (!merged[key] || note.updatedAt >= merged[key].updatedAt) merged[key] = note;
+      });
+    });
+    return merged;
+  }
+
+  function localCardNotes(){
+    try {
+      return normalizeCardNotes(JSON.parse(localStorage.getItem(NOTES_STORAGE_KEY) || '{}'));
+    } catch {
+      return {};
+    }
+  }
+
+  function saveLocalCardNotes(){
+    cardNotes = normalizeCardNotes(cardNotes);
+    localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(cardNotes));
+  }
+
+  function noteText(key){
+    return cardNotes[key]?.text || '';
+  }
+
+  function setCardNote(key, text){
+    if (!isValidCardKey(key)) return;
+    cardNotes[key] = {
+      text: String(text || '').slice(0, 4000),
+      updatedAt: new Date().toISOString(),
+    };
+    saveLocalCardNotes();
   }
 
   function normalizeCustomCards(value){
@@ -1657,6 +1817,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     });
   }
 
+  function refreshMemoButtons(){
+    document.querySelectorAll('.memo-btn').forEach(btn => {
+      const hasNote = Boolean(noteText(btn.dataset.key).trim());
+      const item = itemByKey(btn.dataset.key);
+      btn.classList.toggle('has-note', hasNote);
+      btn.setAttribute('aria-label', `${item ? itemLabel(item) : '카드'} 메모${hasNote ? ' 있음' : ''}`);
+      btn.title = hasNote ? '메모 열기 · 내용 있음' : '메모 열기';
+    });
+  }
+
   async function loadCloudState({ manual = false } = {}){
     try {
       setSyncStatus('클라우드에서 학습 데이터 불러오는 중...');
@@ -1670,14 +1840,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       const remoteRanks = validRanks(data?.data?.[CLOUD_DATA_KEY]);
       const remoteDateTags = normalizeDateTags(data?.data?.[CLOUD_DATE_TAGS_KEY]);
       const remoteCustomCards = normalizeCustomCards(data?.data?.[CLOUD_CUSTOM_CARDS_KEY]);
+      const remoteCardNotes = normalizeCardNotes(data?.data?.[CLOUD_NOTES_KEY]);
       favorites = new Set([...favorites, ...remoteRanks]);
       dateTags = mergeDateTags(dateTags, remoteDateTags);
       customCards = mergeCustomCards(customCards, remoteCustomCards);
+      cardNotes = mergeCardNotes(cardNotes, remoteCardNotes);
       saveLocalFavorites();
       saveLocalDateTags();
       saveLocalCustomCards();
+      saveLocalCardNotes();
       updateFavCount();
       refreshFavoriteButtons();
+      refreshMemoButtons();
       refreshDateTagRows();
       updateDateFilterButton();
       if (reviewDialog.open) renderReviewDateList();
@@ -1698,6 +1872,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     saveLocalFavorites();
     saveLocalDateTags();
     saveLocalCustomCards();
+    saveLocalCardNotes();
     try {
       setSyncStatus(manual ? '클라우드에 수동 저장 중...' : '클라우드에 학습 데이터 저장 중...');
       const { data: current, error: loadError } = await supabase
@@ -1712,6 +1887,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
         [CLOUD_DATA_KEY]: Array.from(favorites).sort((a,b) => a-b),
         [CLOUD_DATE_TAGS_KEY]: normalizeDateTags(dateTags),
         [CLOUD_CUSTOM_CARDS_KEY]: normalizeCustomCards(customCards),
+        [CLOUD_NOTES_KEY]: normalizeCardNotes(cardNotes),
       };
       const { error } = await supabase
         .from(CLOUD_TABLE)
@@ -1729,6 +1905,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     saveLocalFavorites();
     saveLocalDateTags();
     saveLocalCustomCards();
+    saveLocalCardNotes();
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveCloudState, AUTO_SAVE_DELAY);
   }
@@ -1986,6 +2163,48 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     cardEditorForm.reset();
   });
 
+  function openMemoDialog(key){
+    const item = itemByKey(key);
+    if (!item) return;
+    pendingMemoKey = key;
+    memoTarget.textContent = `${itemLabel(item)} · ${item.word}`;
+    memoInput.value = noteText(key);
+    memoClearBtn.hidden = !memoInput.value;
+    memoDialog.showModal();
+    requestAnimationFrame(() => memoInput.focus());
+  }
+
+  function closeMemoAfterSave(text){
+    if (!pendingMemoKey) return;
+    const key = pendingMemoKey;
+    setCardNote(key, text);
+    queueCloudSave();
+    const button = document.querySelector(`.memo-btn[data-key="${key}"]`);
+    if (button) {
+      const hasNote = Boolean(noteText(key).trim());
+      button.classList.toggle('has-note', hasNote);
+      const item = itemByKey(key);
+      button.setAttribute('aria-label', `${item ? itemLabel(item) : '카드'} 메모${hasNote ? ' 있음' : ''}`);
+      button.title = hasNote ? '메모 열기 · 내용 있음' : '메모 열기';
+    }
+    memoDialog.close();
+  }
+
+  memoForm.addEventListener('submit', event => {
+    event.preventDefault();
+    closeMemoAfterSave(memoInput.value);
+  });
+
+  memoClearBtn.addEventListener('click', () => {
+    closeMemoAfterSave('');
+  });
+
+  memoDialog.addEventListener('close', () => {
+    pendingMemoKey = null;
+    memoTarget.textContent = '';
+    memoInput.value = '';
+  });
+
   // ---- Build POS chip row ----
   function updatePosToggle(){
     const selectedCount = activePos.size;
@@ -2179,6 +2398,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
         <hr class="divider">
         ${d.ex_es ? `<p class="example-es">${escapeHTML(d.ex_es)}</p>` : ''}
         ${d.ex_en ? `<p class="example-en${hideMeaning ? ' hidden-mode' : ''}">${escapeHTML(d.ex_en)}</p>` : ''}` : '';
+    const hasNote = Boolean(noteText(key).trim());
+    const memoLabel = `${label} 메모${hasNote ? ' 있음' : ''}`;
     return `
       <article class="card" id="card-${d.custom ? `custom-${d.id}` : d.rank}">
         <div class="card-top">
@@ -2192,7 +2413,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
         <p class="meaning${hideMeaning ? ' hidden-mode' : ''}">${escapeHTML(d.en)}</p>
         ${exampleBlock}
         <div class="card-date-tags" data-date-tags-key="${key}">${cardDateTagsInnerHTML(d)}</div>
-        <div class="card-foot">${customActions}${d.custom ? '<span>my set</span>' : `<span>p. ${d.page}</span>`}</div>
+        <div class="card-foot">
+          <span class="card-tools">${customActions}<button type="button" class="memo-btn${hasNote ? ' has-note' : ''}" data-key="${key}" aria-label="${memoLabel}" title="${hasNote ? '메모 열기 · 내용 있음' : '메모 열기'}"><span class="memo-dot" aria-hidden="true"></span>메모</button></span>
+          <span class="page-ref">${d.custom ? 'my set' : `p. ${d.page}`}</span>
+        </div>
       </article>`;
   }
 
@@ -2299,6 +2523,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   });
 
   grid.addEventListener('click', (e) => {
+    const memoBtn = e.target.closest('.memo-btn');
+    if (memoBtn){
+      openMemoDialog(memoBtn.dataset.key);
+      return;
+    }
+
     const editBtn = e.target.closest('.custom-edit-btn');
     if (editBtn){
       const item = customCards.find(card => card.id === editBtn.dataset.id && !card.deletedAt);
@@ -2312,6 +2542,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       if (!item || !confirm(`“${item.word}” 카드를 삭제할까요?`)) return;
       item.deletedAt = new Date().toISOString();
       item.updatedAt = item.deletedAt;
+      setCardNote(itemKey(item), '');
       saveLocalCustomCards();
       queueCloudSave();
       overrideList = overrideList?.filter(card => itemKey(card) !== itemKey(item)) || null;

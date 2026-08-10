@@ -922,11 +922,24 @@
     font-size: 17px;
     font-weight: 700;
   }
+  .memo-format-btn[data-command="italic"]{
+    font-style: italic;
+    font-weight: 600;
+  }
+  .memo-format-btn[data-command="underline"]{
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
   .memo-format-btn:hover,
   .memo-color-btn:hover{
     border-color: var(--line);
     background: var(--card);
     color: var(--ink);
+  }
+  .memo-format-btn[aria-pressed="true"]{
+    border-color: var(--rust);
+    background: var(--card);
+    color: var(--rust);
   }
   .memo-toolbar-rule{
     width: 1px;
@@ -1541,7 +1554,9 @@
     <div class="memo-editor">
       <label id="memoInputLabel">연관 단어 · 구문 · 나만의 암기법</label>
       <div class="memo-toolbar" role="toolbar" aria-label="메모 서식">
-        <button type="button" class="memo-format-btn" id="memoBoldBtn" aria-label="굵게" title="굵게">B</button>
+        <button type="button" class="memo-format-btn" data-command="bold" aria-label="굵게" aria-pressed="false" title="굵게">B</button>
+        <button type="button" class="memo-format-btn" data-command="italic" aria-label="기울임" aria-pressed="false" title="기울임">I</button>
+        <button type="button" class="memo-format-btn" data-command="underline" aria-label="밑줄" aria-pressed="false" title="밑줄">U</button>
         <span class="memo-toolbar-rule" aria-hidden="true"></span>
         <button type="button" class="memo-color-btn memo-color-ink" data-memo-color="ink" aria-label="잉크 남색" title="잉크 남색"><span class="memo-swatch" aria-hidden="true"></span></button>
         <button type="button" class="memo-color-btn memo-color-rust" data-memo-color="rust" aria-label="러스트" title="러스트"><span class="memo-swatch" aria-hidden="true"></span></button>
@@ -1671,7 +1686,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const memoTarget = document.getElementById('memoTarget');
   const memoInput = document.getElementById('memoInput');
   const memoClearBtn = document.getElementById('memoClearBtn');
-  const memoBoldBtn = document.getElementById('memoBoldBtn');
+  const memoFormatBtns = document.querySelectorAll('.memo-format-btn[data-command]');
   const memoColorBtns = document.querySelectorAll('[data-memo-color]');
 
   const CHUNK = 60;
@@ -1765,22 +1780,32 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       const tag = node.tagName.toLowerCase();
       if (tag === 'br') return document.createElement('br');
 
-      let clean;
-      if (tag === 'strong' || tag === 'b') {
-        clean = document.createElement('strong');
-      } else if (tag === 'span' || tag === 'font') {
-        const namedColor = MEMO_COLOR_VALUES[node.dataset.memoColor]
-          ? node.dataset.memoColor
-          : memoColorNamesByValue[canonicalColor(node.style.color || node.getAttribute('color'))];
-        clean = namedColor ? document.createElement('span') : document.createDocumentFragment();
-        if (namedColor) clean.dataset.memoColor = namedColor;
-      } else if (tag === 'div' || tag === 'p') {
-        clean = document.createElement('div');
-      } else {
-        clean = document.createDocumentFragment();
+      const style = node.style;
+      const namedColor = MEMO_COLOR_VALUES[node.dataset.memoColor]
+        ? node.dataset.memoColor
+        : memoColorNamesByValue[canonicalColor(style.color || node.getAttribute('color'))];
+      const isBold = tag === 'strong' || tag === 'b' || /^(bold|[6-9]00)$/i.test(style.fontWeight);
+      const isItalic = tag === 'em' || tag === 'i' || /^(italic|oblique)$/i.test(style.fontStyle);
+      const isUnderlined = tag === 'u' || /\bunderline\b/i.test(style.textDecorationLine || style.textDecoration);
+      const isBlock = tag === 'div' || tag === 'p';
+
+      let clean = document.createDocumentFragment();
+      [...node.childNodes].forEach(child => clean.appendChild(cleanNode(child)));
+
+      function wrap(tagName, content){
+        const wrapper = document.createElement(tagName);
+        wrapper.appendChild(content);
+        return wrapper;
       }
 
-      [...node.childNodes].forEach(child => clean.appendChild(cleanNode(child)));
+      if (isUnderlined) clean = wrap('u', clean);
+      if (isItalic) clean = wrap('em', clean);
+      if (isBold) clean = wrap('strong', clean);
+      if (namedColor) {
+        clean = wrap('span', clean);
+        clean.dataset.memoColor = namedColor;
+      }
+      if (isBlock) clean = wrap('div', clean);
       return clean;
     }
 
@@ -2364,7 +2389,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   }
 
   document.addEventListener('selectionchange', () => {
-    if (memoDialog.open) rememberMemoSelection();
+    if (!memoDialog.open) return;
+    rememberMemoSelection();
+    memoFormatBtns.forEach(button => {
+      let active = false;
+      try {
+        active = document.queryCommandState(button.dataset.command);
+      } catch {}
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
   });
 
   const memoToolbar = document.querySelector('.memo-toolbar');
@@ -2375,10 +2408,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     if (event.target.closest('button')) event.preventDefault();
   });
 
-  memoBoldBtn.addEventListener('click', () => {
-    restoreMemoSelection();
-    document.execCommand('bold', false);
-    rememberMemoSelection();
+  memoFormatBtns.forEach(button => {
+    button.addEventListener('click', () => {
+      restoreMemoSelection();
+      document.execCommand('styleWithCSS', false, false);
+      document.execCommand(button.dataset.command, false);
+      rememberMemoSelection();
+      button.setAttribute('aria-pressed', document.queryCommandState(button.dataset.command) ? 'true' : 'false');
+    });
   });
 
   memoColorBtns.forEach(button => {
@@ -2388,6 +2425,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       restoreMemoSelection();
       document.execCommand('styleWithCSS', false, true);
       document.execCommand('foreColor', false, color);
+      document.execCommand('styleWithCSS', false, false);
       rememberMemoSelection();
     });
   });

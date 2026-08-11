@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=Nanum+Gothic+Coding:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper: #efe7d3;
@@ -901,9 +901,32 @@
     border-radius: 3px 3px 0 0;
     background: var(--paper-dark);
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 4px;
   }
+  .memo-font-select{
+    width: 96px;
+    height: 30px;
+    min-height: 30px;
+    padding: 0 24px 0 8px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    background-color: transparent;
+    color: var(--ink);
+    font: 11px/1 'Noto Sans KR', sans-serif;
+    cursor: pointer;
+  }
+  .memo-font-select:hover,
+  .memo-font-select:focus{
+    border-color: var(--line);
+    background-color: var(--card);
+    outline: none;
+  }
+  .memo-font-select option[value="sans"]{ font-family: 'Noto Sans KR', sans-serif; }
+  .memo-font-select option[value="serif"]{ font-family: 'Noto Serif KR', serif; }
+  .memo-font-select option[value="editorial"]{ font-family: 'Fraunces', 'Noto Serif KR', serif; }
+  .memo-font-select option[value="mono"]{ font-family: 'Nanum Gothic Coding', monospace; }
   .memo-format-btn,
   .memo-color-btn{
     width: 30px;
@@ -947,6 +970,11 @@
     margin: 0 3px;
     background: var(--line);
   }
+  .memo-color-tools{
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
   .memo-swatch{
     width: 15px;
     height: 15px;
@@ -988,6 +1016,10 @@
   .memo-input [data-memo-color="brass"]{ color: #876928; }
   .memo-input [data-memo-color="teal"]{ color: #486f6b; }
   .memo-input [data-memo-color="plum"]{ color: #71586f; }
+  .memo-input [data-memo-font="sans"]{ font-family: 'Noto Sans KR', sans-serif; }
+  .memo-input [data-memo-font="serif"]{ font-family: 'Noto Serif KR', serif; }
+  .memo-input [data-memo-font="editorial"]{ font-family: 'Fraunces', 'Noto Serif KR', serif; }
+  .memo-input [data-memo-font="mono"]{ font-family: 'Nanum Gothic Coding', monospace; }
   .memo-clear-btn{
     margin-right: auto;
     color: var(--rust);
@@ -1554,15 +1586,24 @@
     <div class="memo-editor">
       <label id="memoInputLabel">연관 단어 · 구문 · 나만의 암기법</label>
       <div class="memo-toolbar" role="toolbar" aria-label="메모 서식">
+        <select class="memo-font-select" id="memoFontSelect" aria-label="글꼴 선택" title="글꼴 선택">
+          <option value="">글꼴</option>
+          <option value="sans">기본 고딕</option>
+          <option value="serif">차분한 명조</option>
+          <option value="editorial">에디토리얼</option>
+          <option value="mono">모노</option>
+        </select>
         <button type="button" class="memo-format-btn" data-command="bold" aria-label="굵게" aria-pressed="false" title="굵게">B</button>
         <button type="button" class="memo-format-btn" data-command="italic" aria-label="기울임" aria-pressed="false" title="기울임">I</button>
         <button type="button" class="memo-format-btn" data-command="underline" aria-label="밑줄" aria-pressed="false" title="밑줄">U</button>
-        <span class="memo-toolbar-rule" aria-hidden="true"></span>
-        <button type="button" class="memo-color-btn memo-color-ink" data-memo-color="ink" aria-label="잉크 남색" title="잉크 남색"><span class="memo-swatch" aria-hidden="true"></span></button>
-        <button type="button" class="memo-color-btn memo-color-rust" data-memo-color="rust" aria-label="러스트" title="러스트"><span class="memo-swatch" aria-hidden="true"></span></button>
-        <button type="button" class="memo-color-btn memo-color-brass" data-memo-color="brass" aria-label="브라스" title="브라스"><span class="memo-swatch" aria-hidden="true"></span></button>
-        <button type="button" class="memo-color-btn memo-color-teal" data-memo-color="teal" aria-label="뮤트 틸" title="뮤트 틸"><span class="memo-swatch" aria-hidden="true"></span></button>
-        <button type="button" class="memo-color-btn memo-color-plum" data-memo-color="plum" aria-label="플럼" title="플럼"><span class="memo-swatch" aria-hidden="true"></span></button>
+        <span class="memo-color-tools">
+          <span class="memo-toolbar-rule" aria-hidden="true"></span>
+          <button type="button" class="memo-color-btn memo-color-ink" data-memo-color="ink" aria-label="잉크 남색" title="잉크 남색"><span class="memo-swatch" aria-hidden="true"></span></button>
+          <button type="button" class="memo-color-btn memo-color-rust" data-memo-color="rust" aria-label="러스트" title="러스트"><span class="memo-swatch" aria-hidden="true"></span></button>
+          <button type="button" class="memo-color-btn memo-color-brass" data-memo-color="brass" aria-label="브라스" title="브라스"><span class="memo-swatch" aria-hidden="true"></span></button>
+          <button type="button" class="memo-color-btn memo-color-teal" data-memo-color="teal" aria-label="뮤트 틸" title="뮤트 틸"><span class="memo-swatch" aria-hidden="true"></span></button>
+          <button type="button" class="memo-color-btn memo-color-plum" data-memo-color="plum" aria-label="플럼" title="플럼"><span class="memo-swatch" aria-hidden="true"></span></button>
+        </span>
       </div>
       <div id="memoInput" class="memo-input" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="memoInputLabel" data-placeholder="이 카드를 다시 볼 때 함께 떠올리고 싶은 내용을 적어두세요."></div>
     </div>
@@ -1622,6 +1663,12 @@ const MEMO_COLOR_VALUES = Object.freeze({
   brass: "#876928",
   teal: "#486f6b",
   plum: "#71586f",
+});
+const MEMO_FONT_VALUES = Object.freeze({
+  sans: "Noto Sans KR",
+  serif: "Noto Serif KR",
+  editorial: "Fraunces",
+  mono: "Nanum Gothic Coding",
 });
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -1686,6 +1733,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const memoTarget = document.getElementById('memoTarget');
   const memoInput = document.getElementById('memoInput');
   const memoClearBtn = document.getElementById('memoClearBtn');
+  const memoFontSelect = document.getElementById('memoFontSelect');
   const memoFormatBtns = document.querySelectorAll('.memo-format-btn[data-command]');
   const memoColorBtns = document.querySelectorAll('[data-memo-color]');
 
@@ -1763,6 +1811,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     Object.entries(MEMO_COLOR_VALUES).map(([name, value]) => [canonicalColor(value), name])
   );
 
+  function canonicalFont(value){
+    return String(value || '').split(',')[0].replace(/["']/g, '').trim().toLowerCase();
+  }
+
+  const memoFontNamesByValue = Object.fromEntries(
+    Object.entries(MEMO_FONT_VALUES).map(([name, value]) => [canonicalFont(value), name])
+  );
+
   function sanitizeMemoHTML(value){
     const template = document.createElement('template');
     template.innerHTML = String(value || '').slice(0, 20000);
@@ -1784,6 +1840,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       const namedColor = MEMO_COLOR_VALUES[node.dataset.memoColor]
         ? node.dataset.memoColor
         : memoColorNamesByValue[canonicalColor(style.color || node.getAttribute('color'))];
+      const namedFont = MEMO_FONT_VALUES[node.dataset.memoFont]
+        ? node.dataset.memoFont
+        : memoFontNamesByValue[canonicalFont(style.fontFamily || node.getAttribute('face'))];
       const isBold = tag === 'strong' || tag === 'b' || /^(bold|[6-9]00)$/i.test(style.fontWeight);
       const isItalic = tag === 'em' || tag === 'i' || /^(italic|oblique)$/i.test(style.fontStyle);
       const isUnderlined = tag === 'u' || /\bunderline\b/i.test(style.textDecorationLine || style.textDecoration);
@@ -1804,6 +1863,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       if (namedColor) {
         clean = wrap('span', clean);
         clean.dataset.memoColor = namedColor;
+      }
+      if (namedFont) {
+        clean = wrap('span', clean);
+        clean.dataset.memoFont = namedFont;
       }
       if (isBlock) clean = wrap('div', clean);
       return clean;
@@ -2416,6 +2479,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       rememberMemoSelection();
       button.setAttribute('aria-pressed', document.queryCommandState(button.dataset.command) ? 'true' : 'false');
     });
+  });
+
+  memoFontSelect.addEventListener('change', () => {
+    const font = MEMO_FONT_VALUES[memoFontSelect.value];
+    if (!font) return;
+    restoreMemoSelection();
+    document.execCommand('styleWithCSS', false, true);
+    document.execCommand('fontName', false, font);
+    document.execCommand('styleWithCSS', false, false);
+    rememberMemoSelection();
+    memoFontSelect.value = '';
   });
 
   memoColorBtns.forEach(button => {

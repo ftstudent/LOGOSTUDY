@@ -1037,6 +1037,8 @@
     -webkit-box-decoration-break: clone;
     -webkit-user-select: none;
     user-select: none;
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
   }
   .memo-input [data-memo-mask]:not(.is-revealed) *{
     color: transparent !important;
@@ -1047,6 +1049,10 @@
     caret-color: currentColor;
     -webkit-user-select: text;
     user-select: text;
+  }
+  .memo-input [data-memo-mask].is-editing{
+    outline: 1px solid var(--rust-dim);
+    outline-offset: 1px;
   }
   .memo-clear-btn{
     margin-right: auto;
@@ -1788,6 +1794,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   let savedMemoRange = null;
   let memoReturnScroll = null;
   let memoScrollRestoreTimer = null;
+  let memoMaskPress = null;
+  let suppressMemoMaskClickUntil = 0;
   let saveTimer = null;
 
   function setSyncStatus(message, type = ''){
@@ -2455,6 +2463,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     window.scrollTo(position.x, position.y);
   }
 
+  function isTouchFirstDevice(){
+    return matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1;
+  }
+
+  function prepareMemoMasks(){
+    if (!isTouchFirstDevice()) return;
+    memoInput.querySelectorAll('[data-memo-mask]').forEach(mask => {
+      mask.contentEditable = 'false';
+    });
+  }
+
   function openMemoDialog(key){
     const item = itemByKey(key);
     if (!item) return;
@@ -2463,12 +2482,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     pendingMemoKey = key;
     memoTarget.textContent = `${itemLabel(item)} · ${item.word}`;
     memoInput.innerHTML = noteHTML(key);
+    prepareMemoMasks();
     memoClearBtn.hidden = !hasCardNote(key);
     memoDialog.showModal();
     restoreMemoPageScroll(openingScroll);
     requestAnimationFrame(() => {
-      const touchFirst = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1;
-      if (!touchFirst) focusMemoInput();
+      if (!isTouchFirstDevice()) focusMemoInput();
       restoreMemoPageScroll(openingScroll);
       requestAnimationFrame(() => restoreMemoPageScroll(openingScroll));
     });
@@ -2606,6 +2625,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       const selected = start > 0 ? node.splitText(start) : node;
       const mask = document.createElement('span');
       mask.dataset.memoMask = maskKey;
+      if (isTouchFirstDevice()) mask.contentEditable = 'false';
       selected.replaceWith(mask);
       mask.appendChild(selected);
     });
@@ -2614,14 +2634,121 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     focusMemoInput();
   });
 
+  function setMemoMaskGroupRevealed(maskKey, reveal){
+    [...memoInput.querySelectorAll('[data-memo-mask]')].forEach(part => {
+      if (part.dataset.memoMask === maskKey) {
+        part.classList.toggle('is-revealed', reveal);
+      }
+    });
+  }
+
+  function clearMemoMaskPress(){
+    if (!memoMaskPress) return;
+    clearTimeout(memoMaskPress.timer);
+    memoMaskPress = null;
+  }
+
+  function cancelMemoMaskPress(){
+    if (!memoMaskPress) return;
+    const press = memoMaskPress;
+    clearMemoMaskPress();
+    if (press.long) {
+      setMemoMaskGroupRevealed(press.maskKey, press.wasRevealed);
+      press.mask.classList.remove('is-editing');
+    }
+  }
+
+  function placeCaretInMemoMask(mask, x, y){
+    let range = null;
+    if (document.caretRangeFromPoint) {
+      range = document.caretRangeFromPoint(x, y);
+    } else if (document.caretPositionFromPoint) {
+      const position = document.caretPositionFromPoint(x, y);
+      if (position) {
+        range = document.createRange();
+        range.setStart(position.offsetNode, position.offset);
+        range.collapse(true);
+      }
+    }
+    if (!range || !mask.contains(range.startContainer)) {
+      range = document.createRange();
+      range.selectNodeContents(mask);
+      range.collapse(false);
+    }
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    savedMemoRange = range.cloneRange();
+  }
+
+  memoInput.addEventListener('pointerdown', event => {
+    const mask = event.target.closest('[data-memo-mask]');
+    if (!mask || !memoInput.contains(mask) || !isTouchFirstDevice()) return;
+    event.preventDefault();
+    memoInput.blur();
+    clearMemoMaskPress();
+    const press = {
+      pointerId: event.pointerId,
+      mask,
+      maskKey: mask.dataset.memoMask,
+      startX: event.clientX,
+      startY: event.clientY,
+      x: event.clientX,
+      y: event.clientY,
+      wasRevealed: mask.classList.contains('is-revealed'),
+      long: false,
+      timer: null,
+    };
+    press.timer = setTimeout(() => {
+      press.long = true;
+      setMemoMaskGroupRevealed(press.maskKey, true);
+      mask.classList.add('is-editing');
+    }, 520);
+    memoMaskPress = press;
+  });
+
+  memoInput.addEventListener('pointermove', event => {
+    if (!memoMaskPress || event.pointerId !== memoMaskPress.pointerId) return;
+    memoMaskPress.x = event.clientX;
+    memoMaskPress.y = event.clientY;
+    if (Math.hypot(event.clientX - memoMaskPress.startX, event.clientY - memoMaskPress.startY) > 10) {
+      cancelMemoMaskPress();
+    }
+  });
+
+  memoInput.addEventListener('pointerup', event => {
+    if (!memoMaskPress || event.pointerId !== memoMaskPress.pointerId) return;
+    event.preventDefault();
+    const press = memoMaskPress;
+    clearMemoMaskPress();
+    suppressMemoMaskClickUntil = Date.now() + 700;
+    if (!press.long) {
+      setMemoMaskGroupRevealed(press.maskKey, !press.wasRevealed);
+      setTimeout(() => memoInput.blur(), 0);
+      return;
+    }
+    press.mask.contentEditable = 'true';
+    focusMemoInput();
+    placeCaretInMemoMask(press.mask, press.x, press.y);
+  });
+
+  memoInput.addEventListener('pointercancel', cancelMemoMaskPress);
+
   memoInput.addEventListener('click', event => {
     const mask = event.target.closest('[data-memo-mask]');
     if (!mask || !memoInput.contains(mask)) return;
-    const reveal = !mask.classList.contains('is-revealed');
-    [...memoInput.querySelectorAll('[data-memo-mask]')].forEach(part => {
-      if (part.dataset.memoMask === mask.dataset.memoMask) {
-        part.classList.toggle('is-revealed', reveal);
-      }
+    if (Date.now() < suppressMemoMaskClickUntil) {
+      event.preventDefault();
+      return;
+    }
+    setMemoMaskGroupRevealed(mask.dataset.memoMask, !mask.classList.contains('is-revealed'));
+  });
+
+  memoInput.addEventListener('blur', () => {
+    if (!isTouchFirstDevice()) return;
+    memoInput.querySelectorAll('[data-memo-mask]').forEach(mask => {
+      mask.contentEditable = 'false';
+      mask.classList.remove('is-editing');
     });
   });
 
@@ -2642,6 +2769,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     clearTimeout(memoScrollRestoreTimer);
     memoScrollRestoreTimer = null;
     memoReturnScroll = null;
+    cancelMemoMaskPress();
+    suppressMemoMaskClickUntil = 0;
     pendingMemoKey = null;
     savedMemoRange = null;
     memoTarget.textContent = '';

@@ -1786,6 +1786,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   let editingCustomCardId = null;
   let pendingMemoKey = null;
   let savedMemoRange = null;
+  let memoReturnScroll = null;
+  let memoScrollRestoreTimer = null;
   let saveTimer = null;
 
   function setSyncStatus(message, type = ''){
@@ -2438,15 +2440,40 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     cardEditorForm.reset();
   });
 
+  function focusMemoInput(){
+    const scrollPosition = { x: window.scrollX, y: window.scrollY };
+    try {
+      memoInput.focus({ preventScroll: true });
+    } catch {
+      memoInput.focus();
+    }
+    restoreMemoPageScroll(scrollPosition);
+  }
+
+  function restoreMemoPageScroll(position = memoReturnScroll){
+    if (!position) return;
+    window.scrollTo(position.x, position.y);
+  }
+
   function openMemoDialog(key){
     const item = itemByKey(key);
     if (!item) return;
+    const openingScroll = { x: window.scrollX, y: window.scrollY };
+    memoReturnScroll = openingScroll;
     pendingMemoKey = key;
     memoTarget.textContent = `${itemLabel(item)} · ${item.word}`;
     memoInput.innerHTML = noteHTML(key);
     memoClearBtn.hidden = !hasCardNote(key);
     memoDialog.showModal();
-    requestAnimationFrame(() => memoInput.focus());
+    restoreMemoPageScroll(openingScroll);
+    requestAnimationFrame(() => {
+      const touchFirst = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1;
+      if (!touchFirst) focusMemoInput();
+      restoreMemoPageScroll(openingScroll);
+      requestAnimationFrame(() => restoreMemoPageScroll(openingScroll));
+    });
+    clearTimeout(memoScrollRestoreTimer);
+    memoScrollRestoreTimer = setTimeout(() => restoreMemoPageScroll(openingScroll), 120);
   }
 
   function closeMemoAfterSave(html){
@@ -2481,7 +2508,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   }
 
   function restoreMemoSelection(){
-    memoInput.focus();
+    focusMemoInput();
     if (!savedMemoRange) return;
     const selection = window.getSelection();
     selection.removeAllRanges();
@@ -2566,7 +2593,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     if (existingGroups.size) {
       unwrapMemoMaskGroups(existingGroups);
       savedMemoRange = null;
-      memoInput.focus();
+      focusMemoInput();
       return;
     }
 
@@ -2584,7 +2611,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     });
     savedMemoRange = null;
     selection.removeAllRanges();
-    memoInput.focus();
+    focusMemoInput();
   });
 
   memoInput.addEventListener('click', event => {
@@ -2611,10 +2638,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   });
 
   memoDialog.addEventListener('close', () => {
+    const returnScroll = memoReturnScroll;
+    clearTimeout(memoScrollRestoreTimer);
+    memoScrollRestoreTimer = null;
+    memoReturnScroll = null;
     pendingMemoKey = null;
     savedMemoRange = null;
     memoTarget.textContent = '';
     memoInput.innerHTML = '';
+    requestAnimationFrame(() => restoreMemoPageScroll(returnScroll));
   });
 
   // ---- Build POS chip row ----

@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=Nanum+Gothic+Coding:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic+Coding:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper: #efe7d3;
@@ -924,6 +924,7 @@
     outline: none;
   }
   .memo-font-select option[value="sans"]{ font-family: 'Noto Sans KR', sans-serif; }
+  .memo-font-select option[value="plex"]{ font-family: 'IBM Plex Sans KR', sans-serif; }
   .memo-font-select option[value="serif"]{ font-family: 'Noto Serif KR', serif; }
   .memo-font-select option[value="editorial"]{ font-family: 'Fraunces', 'Noto Serif KR', serif; }
   .memo-font-select option[value="mono"]{ font-family: 'Nanum Gothic Coding', monospace; }
@@ -1023,6 +1024,7 @@
   .memo-input [data-memo-color="teal"]{ color: #486f6b; }
   .memo-input [data-memo-color="plum"]{ color: #71586f; }
   .memo-input [data-memo-font="sans"]{ font-family: 'Noto Sans KR', sans-serif; }
+  .memo-input [data-memo-font="plex"]{ font-family: 'IBM Plex Sans KR', sans-serif; }
   .memo-input [data-memo-font="serif"]{ font-family: 'Noto Serif KR', serif; }
   .memo-input [data-memo-font="editorial"]{ font-family: 'Fraunces', 'Noto Serif KR', serif; }
   .memo-input [data-memo-font="mono"]{ font-family: 'Nanum Gothic Coding', monospace; }
@@ -1623,6 +1625,7 @@
         <select class="memo-font-select" id="memoFontSelect" aria-label="글꼴 선택 · 기본 에디토리얼" title="글꼴 선택 · 기본 에디토리얼">
           <option value="">기본 · 에디토리얼</option>
           <option value="sans">기본 고딕</option>
+          <option value="plex">플렉스 고딕</option>
           <option value="serif">차분한 명조</option>
           <option value="editorial">에디토리얼 적용</option>
           <option value="mono">모노</option>
@@ -1701,6 +1704,7 @@ const MEMO_COLOR_VALUES = Object.freeze({
 });
 const MEMO_FONT_VALUES = Object.freeze({
   sans: "Noto Sans KR",
+  plex: "IBM Plex Sans KR",
   serif: "Noto Serif KR",
   editorial: "Fraunces",
   mono: "Nanum Gothic Coding",

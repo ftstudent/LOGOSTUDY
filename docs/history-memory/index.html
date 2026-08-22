@@ -1477,7 +1477,6 @@
     grid-template-columns: 1fr;
   }
   .editor-field textarea.question-input{ min-height: 86px; }
-  .editor-field textarea.answer-input{ min-height: 110px; }
   .editor-field textarea.hint-input{ min-height: 84px; }
   .editor-help{
     margin: -1px 0 0;
@@ -1491,18 +1490,12 @@
     line-height: 1.48;
     white-space: pre-wrap;
   }
-  .answer-label,
   .hint-label{
     display: block;
     margin-bottom: 5px;
     color: var(--brass);
     font: 9px/1.2 'IBM Plex Mono', monospace;
     letter-spacing: .1em;
-  }
-  .meaning{
-    margin: 12px 0 14px;
-    line-height: 1.65;
-    white-space: pre-wrap;
   }
   .hint-toggle{
     width: 100%;
@@ -1694,14 +1687,13 @@
       <button type="button" class="history-add-btn" id="addCardBtn" aria-haspopup="dialog">+ 문제 추가</button>
       <div class="field search-field">
         <span class="field-label">검색</span>
-        <input class="history-search" type="search" id="searchInput" placeholder="문제 · 답안 · 힌트 · 그룹 검색" autocomplete="off">
+        <input class="history-search" type="search" id="searchInput" placeholder="문제 · 힌트 · 그룹 · 메모 검색" autocomplete="off">
       </div>
       <form id="jumpForm" class="field jump-field">
         <span class="field-label">번호 이동</span>
         <input type="number" id="jumpInput" placeholder="번호" min="1">
         <button type="submit">이동</button>
       </form>
-      <button type="button" id="hideToggle" class="toggle-btn" aria-pressed="false">답안 숨기기</button>
       <button type="button" id="reviewBtn" class="toggle-btn" aria-haspopup="dialog">복습 추출</button>
       <div class="field fav-filter-field" style="margin-top:12px;">
         <div class="fav-chip" id="favOnlyChip"><span>★ 즐겨찾기만</span><span class="count" id="favCount">0</span></div>
@@ -1795,11 +1787,7 @@
         <textarea class="question-input" id="questionInput" maxlength="500" placeholder="인출하고 싶은 내용을 질문으로 적으세요." required></textarea>
       </div>
       <div class="editor-field full">
-        <label for="answerInput">핵심 답안 <span class="required-mark">필수</span></label>
-        <textarea class="answer-input" id="answerInput" maxlength="2000" placeholder="문제를 보고 떠올려야 할 핵심 내용을 적으세요." required></textarea>
-      </div>
-      <div class="editor-field full">
-        <label for="hintInput">답안 골격 · 힌트</label>
+        <label for="hintInput">문제 골격 · 힌트</label>
         <textarea class="hint-input" id="hintInput" maxlength="1200" placeholder="예: 배경 → 전개 → 결과 / 핵심 인물 3명"></textarea>
         <p class="editor-help">카드에서는 기본으로 숨겨지며 필요할 때만 펼칠 수 있습니다.</p>
       </div>
@@ -1909,7 +1897,6 @@ const sentinel = $('sentinel');
 const searchInput = $('searchInput');
 const jumpForm = $('jumpForm');
 const jumpInput = $('jumpInput');
-const hideToggle = $('hideToggle');
 const reviewBtn = $('reviewBtn');
 const resultCount = $('resultCount');
 const favOnlyChip = $('favOnlyChip');
@@ -1947,7 +1934,6 @@ const cardEditorForm = $('cardEditorForm');
 const cardEditorTitle = $('cardEditorTitle');
 const cardEditorSubmitBtn = $('cardEditorSubmitBtn');
 const questionInput = $('questionInput');
-const answerInput = $('answerInput');
 const hintInput = $('hintInput');
 const groupsInput = $('groupsInput');
 const memoDialog = $('memoDialog');
@@ -1966,7 +1952,6 @@ let cards = [];
 let cardNotes = {};
 let filtered = [];
 let renderedCount = 0;
-let hideAnswer = false;
 let favOnly = false;
 let activeGroupFilter = '';
 let selectedReviewGroups = new Set();
@@ -2024,7 +2009,6 @@ function normalizeCards(value){
       id: raw.id.slice(0, 80),
       seq: Number.isInteger(seq) && seq > 0 ? seq : 1,
       question: String(raw.question || '').trim().slice(0, 500),
-      answer: String(raw.answer || '').trim().slice(0, 2000),
       hint: String(raw.hint || '').trim().slice(0, 1200),
       groups: normalizeGroups(raw.groups),
       favorite: Boolean(raw.favorite),
@@ -2387,7 +2371,6 @@ function openCardEditor(card = null){
   cardEditorTitle.textContent = card ? `${cardLabel(card)} 수정` : '인출 문제 추가';
   cardEditorSubmitBtn.textContent = card ? '저장' : '추가';
   questionInput.value = card?.question || '';
-  answerInput.value = card?.answer || '';
   hintInput.value = card?.hint || '';
   groupsInput.value = card?.groups.join(', ') || '';
   updateGroupSuggestions();
@@ -2412,7 +2395,6 @@ function cardHTML(card){
         <span class="pos-tag">RECALL</span>
       </div>
       <h2 class="headword">${escapeHTML(card.question)}</h2>
-      <p class="meaning${hideAnswer ? ' hidden-mode' : ''}"><span class="answer-label">CORE ANSWER</span>${escapeHTML(card.answer)}</p>
       ${hintBlock}
       <div class="card-groups" data-card-groups="${escapeAttr(card.id)}">${renderGroupChips(card)}</div>
       <div class="card-foot">
@@ -2466,7 +2448,7 @@ function applyFilters(){
     if (favOnly && !card.favorite) return false;
     if (activeGroupFilter && !card.groups.includes(activeGroupFilter)) return false;
     if (!query) return true;
-    return [card.question, card.answer, card.hint, card.groups.join(' '), notePlainText(card)]
+    return [card.question, card.hint, card.groups.join(' '), notePlainText(card)]
       .some(value => value.toLocaleLowerCase('ko-KR').includes(query));
   });
   resetGrid();
@@ -2537,10 +2519,6 @@ function clearViewFiltersForReview(){
   favOnlyChip.classList.remove('active');
   activeGroupFilter = '';
   updateGroupFilterButton();
-  hideAnswer = true;
-  hideToggle.setAttribute('aria-pressed', 'true');
-  hideToggle.textContent = '답안 보기';
-  grid.classList.add('translation-test-mode');
 }
 
 function focusMemoInput(){
@@ -2750,7 +2728,6 @@ cardEditorForm.addEventListener('submit', event => {
   if (card) {
     Object.assign(card, {
       question: questionInput.value.trim(),
-      answer: answerInput.value.trim(),
       hint: hintInput.value.trim(),
       groups: normalizeGroups(groupsInput.value),
       updatedAt: now,
@@ -2761,7 +2738,6 @@ cardEditorForm.addEventListener('submit', event => {
       id: crypto.randomUUID(),
       seq: nextSeq,
       question: questionInput.value.trim(),
-      answer: answerInput.value.trim(),
       hint: hintInput.value.trim(),
       groups: normalizeGroups(groupsInput.value),
       favorite: false,
@@ -2844,15 +2820,6 @@ jumpForm.addEventListener('submit', event => {
     element?.classList.add('flash');
     setTimeout(() => element?.classList.remove('flash'), 1200);
   });
-});
-
-hideToggle.addEventListener('click', () => {
-  hideAnswer = !hideAnswer;
-  hideToggle.setAttribute('aria-pressed', hideAnswer ? 'true' : 'false');
-  hideToggle.textContent = hideAnswer ? '답안 보기' : '답안 숨기기';
-  grid.classList.toggle('translation-test-mode', hideAnswer);
-  document.querySelectorAll('.card.translation-visible').forEach(card => card.classList.remove('translation-visible'));
-  document.querySelectorAll('.meaning').forEach(element => element.classList.toggle('hidden-mode', hideAnswer));
 });
 
 favOnlyChip.addEventListener('click', () => {
@@ -2992,8 +2959,6 @@ grid.addEventListener('click', event => {
     return;
   }
 
-  if (!hideAnswer || event.target.closest('button, input, .card-groups')) return;
-  event.target.closest('.card')?.classList.toggle('translation-visible');
 });
 
 exportBtn.addEventListener('click', () => {

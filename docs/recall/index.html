@@ -676,6 +676,13 @@
           <div class="card-body sm">
             <form class="stack" style="gap:14px;" id="extractFormManage">
               <label class="field">
+                <span class="field-label">복습 종류</span>
+                <select id="extractModeManage">
+                  <option value="new">새 문장 복습</option>
+                  <option value="repeat">재복습</option>
+                </select>
+              </label>
+              <label class="field">
                 <span class="field-label">복습 언어</span>
                 <select id="extractLanguageManage">
                   <option value="en">영어</option>
@@ -795,6 +802,7 @@
   const PUBLIC_DATA_URL = "data/sentences.json";
   const PUBLIC_DATA_PATHS = ["recall/data/sentences.json", "docs/recall/data/sentences.json"];
   const AUTO_SYNC_DELAY = 1200;
+  const REVIEW_INTERVAL_DAYS = [0, 3, 7, 14, 30, 60, 120, 180];
 
   const LANGUAGES = [
     { code: "en", label: "영어", short: "EN", aliases: ["english", "영어"] },
@@ -838,6 +846,7 @@
     statsManage: document.querySelector("#statsManage"),
     statsReview: document.querySelector("#statsReview"),
     extractFormManage: document.querySelector("#extractFormManage"),
+    extractModeManage: document.querySelector("#extractModeManage"),
     extractLanguageManage: document.querySelector("#extractLanguageManage"),
     extractCountManage: document.querySelector("#extractCountManage"),
     extractFavoriteManage: document.querySelector("#extractFavoriteManage"),
@@ -865,6 +874,7 @@
   let reviewIndex = 0;
   let showTranslation = false;
   let lastExtractSettings = null;
+  let reviewEmptyMessage = "관리 탭의 추출 설정에서 복습을 시작하세요.";
   let syncSettings = loadSyncSettings();
   let reviewHistory = loadReviewHistory();
   let deletedItems = loadDeletedItems();
@@ -898,6 +908,8 @@
     if (!item || !item.original || !item.translation) return null;
     const difficulty = Number(item.difficulty);
     const language = normalizeLanguage(item.language || item.lang || item.sourceLanguage || "en");
+    const reviewCount = Math.max(0, Number(item.reviewCount) || 0);
+    const lastReviewedAt = item.lastReviewedAt || null;
     return {
       id: item.id || uid(),
       original: String(item.original).trim(),
@@ -905,10 +917,13 @@
       language,
       difficulty: [1,2,3,4].includes(difficulty) ? difficulty : 2,
       favorite: Boolean(item.favorite),
-      reviewCount: Math.max(0, Number(item.reviewCount) || 0),
+      reviewCount,
       createdAt: item.createdAt || new Date().toISOString(),
       updatedAt: item.updatedAt || item.createdAt || new Date().toISOString(),
-      lastReviewedAt: item.lastReviewedAt || null,
+      lastReviewedAt,
+      lastReviewNumber: lastReviewedAt
+        ? Math.max(1, Number(item.lastReviewNumber) || reviewCount || 1)
+        : 0,
     };
   }
 
@@ -982,6 +997,32 @@
 
   function monthDayLabel(date) {
     return `${date.getMonth() + 1}/${date.getDate()}`;
+  }
+
+  function startOfLocalDay(date = new Date()) {
+    const result = new Date(date);
+    result.setHours(0, 0, 0, 0);
+    return result;
+  }
+
+  function reviewIntervalDays(reviewCount) {
+    const count = Math.max(1, Number(reviewCount) || 1);
+    return REVIEW_INTERVAL_DAYS[Math.min(count, REVIEW_INTERVAL_DAYS.length - 1)];
+  }
+
+  function nextReviewDate(item) {
+    if (!item || item.reviewCount < 1 || !item.lastReviewedAt) return null;
+    const lastReviewed = new Date(item.lastReviewedAt);
+    if (Number.isNaN(lastReviewed.getTime())) return null;
+    const next = startOfLocalDay(lastReviewed);
+    next.setDate(next.getDate() + reviewIntervalDays(item.reviewCount));
+    return next;
+  }
+
+  function isReviewDue(item, date = new Date()) {
+    if (!item || item.reviewCount < 1) return false;
+    const next = nextReviewDate(item);
+    return !next || next.getTime() <= startOfLocalDay(date).getTime();
   }
 
   function bumpReviewHistory(date = new Date()) {
@@ -1117,7 +1158,11 @@
           <div class="s-dates">
             <span>등록 ${formatDate(item.createdAt)}</span>
             <span class="s-dates-sep">·</span>
-            <span>최종 복습 ${formatDate(item.lastReviewedAt) ?? '없음'}</span>
+            ${item.lastReviewedAt ? `
+              <span>${item.lastReviewNumber || item.reviewCount}번째 복습 완료 ${formatDate(item.lastReviewedAt)}</span>
+              <span class="s-dates-sep">·</span>
+              <span>다음 복습 ${nextReviewDate(item) ? formatDate(nextReviewDate(item)) : '지금'}</span>
+            ` : `<span>복습 기록 없음</span>`}
           </div>
         </div>
         <div class="s-actions">
@@ -1327,17 +1372,36 @@
       .map(e => e.item);
   }
 
-  function startReview(languageEl, countEl, diffChecksEl, favEl, goToReviewTab) {
+  function startReview(modeEl, languageEl, countEl, diffChecksEl, favEl, goToReviewTab) {
+    const mode = modeEl.value === "repeat" ? "repeat" : "new";
     const language = normalizeLanguage(languageEl.value);
     const count = Math.max(1, Number(countEl.value) || 1);
     const difficulties = selectedDifficultiesFrom(diffChecksEl);
     const favorite = favEl.value;
-    lastExtractSettings = { languageEl, countEl, diffChecksEl, favEl };
+    lastExtractSettings = { modeEl, languageEl, countEl, diffChecksEl, favEl };
 
-    const candidates = sentences
+    const filtered = sentences
       .filter(i => i.language === language)
       .filter(i => difficulties.includes(i.difficulty))
       .filter(i => favorite === "all" || (favorite === "fav" ? i.favorite : !i.favorite));
+
+    const candidates = filtered.filter(item => mode === "repeat"
+      ? item.reviewCount > 0 && isReviewDue(item)
+      : item.reviewCount === 0
+    );
+
+    if (mode === "repeat") {
+      const nextScheduled = filtered
+        .filter(item => item.reviewCount > 0)
+        .map(nextReviewDate)
+        .filter(date => date && date.getTime() > startOfLocalDay().getTime())
+        .sort((a, b) => a.getTime() - b.getTime())[0];
+      reviewEmptyMessage = nextScheduled
+        ? `오늘 재복습할 문장이 없습니다. 다음 예정일은 ${formatDate(nextScheduled)}입니다.`
+        : "조건에 맞는 재복습 문장이 없습니다.";
+    } else {
+      reviewEmptyMessage = "조건에 맞는 미복습 문장이 없습니다.";
+    }
 
     reviewQueue = shuffledByReviewCount(candidates).slice(0, count).map(i => i.id);
     reviewIndex = 0;
@@ -1353,7 +1417,7 @@
   function renderReview() {
     const stage = els.reviewStage;
     if (!reviewQueue.length) {
-      stage.innerHTML = `<div class="empty">관리 탭의 추출 설정에서 복습을 시작하세요.</div>`;
+      stage.innerHTML = `<div class="empty">${escapeHtml(reviewEmptyMessage)}</div>`;
       return;
     }
     if (reviewIndex >= reviewQueue.length) {
@@ -1380,7 +1444,7 @@
       <div class="review-top">
         <span class="review-count">${reviewIndex + 1} / ${reviewQueue.length}</span>
         <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <span class="diff-badge">${languageLabel(item.language)} · 난이도 ${item.difficulty}${item.favorite ? " · ★" : ""}</span>
+        <span class="diff-badge">${languageLabel(item.language)} · 난이도 ${item.difficulty} · ${item.reviewCount + 1}번째${item.favorite ? " · ★" : ""}</span>
       </div>
       <div class="review-sentence lang-${escapeHtml(item.language)}">${escapeHtml(item.original)}</div>
       <div class="review-answer ${showTranslation ? "shown" : "hidden"}">
@@ -1436,6 +1500,7 @@
       const now = new Date().toISOString();
       item.updatedAt = now;
       item.lastReviewedAt = now;
+      item.lastReviewNumber = item.reviewCount;
       saveSentences();
       bumpReviewHistory();
       queueAutoSync();
@@ -1497,7 +1562,7 @@
 
   function syncPayload() {
     return {
-      version: 1,
+      version: 2,
       updatedAt: new Date().toISOString(),
       sentences,
       reviewHistory: normalizeReviewHistory(reviewHistory),
@@ -1805,7 +1870,7 @@
 
   els.extractFormManage.addEventListener("submit", e => {
     e.preventDefault();
-    startReview(els.extractLanguageManage, els.extractCountManage, els.difficultyChecksManage, els.extractFavoriteManage, true);
+    startReview(els.extractModeManage, els.extractLanguageManage, els.extractCountManage, els.difficultyChecksManage, els.extractFavoriteManage, true);
   });
 
   els.exportBtn.addEventListener("click", exportJson);
@@ -1824,8 +1889,8 @@
     if (e.target.id === "completeReviewBtn") completeReview();
     if (e.target.id === "skipReviewBtn") skipReview();
     if (e.target.id === "reviewAgainBtn" && lastExtractSettings) {
-      const { languageEl, countEl, diffChecksEl, favEl } = lastExtractSettings;
-      startReview(languageEl, countEl, diffChecksEl, favEl, false);
+      const { modeEl, languageEl, countEl, diffChecksEl, favEl } = lastExtractSettings;
+      startReview(modeEl, languageEl, countEl, diffChecksEl, favEl, false);
     }
   });
   els.reviewStage.addEventListener("submit", e => {

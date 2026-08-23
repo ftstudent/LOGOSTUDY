@@ -1778,25 +1778,37 @@
     color: var(--ink);
     font-weight: 700;
     line-height: 1.55;
-    cursor: pointer;
+    cursor: text;
     list-style: none;
     display: flex;
     align-items: flex-start;
     gap: 7px;
   }
   .memo-input summary::-webkit-details-marker{ display: none; }
-  .memo-input summary::before{
-    content: '▸';
+  .memo-input [data-memo-toggle-control]{
     flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    margin: -1px 0;
+    border-radius: 3px;
     color: var(--rust);
     font-family: 'Noto Sans KR', sans-serif;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transform-origin: 50% 50%;
     transition: transform .14s ease;
+  }
+  .memo-input [data-memo-toggle-control]:hover{
+    background: rgba(143,63,90,.1);
   }
   .memo-input details[open] > summary{
     border-bottom: 1px solid var(--line);
   }
-  .memo-input details[open] > summary::before{
+  .memo-input details[open] > summary > [data-memo-toggle-control]{
     transform: rotate(90deg);
   }
   .memo-input details > div{
@@ -2302,6 +2314,15 @@ function sanitizeMemoHTML(value){
     if (dropped.has(tag)) return document.createDocumentFragment();
     if (tag === 'br') return document.createElement('br');
     if (tag === 'hr') return document.createElement('hr');
+    if (tag === 'span' && node.hasAttribute('data-memo-toggle-control')) {
+      const control = document.createElement('span');
+      control.dataset.memoToggleControl = '';
+      control.contentEditable = 'false';
+      control.setAttribute('role', 'button');
+      control.setAttribute('aria-label', '토글 접기 또는 펼치기');
+      control.textContent = '▸';
+      return control;
+    }
 
     const style = node.style;
     const namedColor = MEMO_COLOR_VALUES[node.dataset.memoColor]
@@ -2748,6 +2769,27 @@ function prepareMemoMasks(){
   });
 }
 
+function createMemoToggleControl(){
+  const control = document.createElement('span');
+  control.dataset.memoToggleControl = '';
+  control.contentEditable = 'false';
+  control.setAttribute('role', 'button');
+  control.setAttribute('aria-label', '토글 접기 또는 펼치기');
+  control.textContent = '▸';
+  return control;
+}
+
+function prepareMemoToggles(){
+  memoInput.querySelectorAll('details > summary').forEach(summary => {
+    const directControl = [...summary.children].find(child => child.hasAttribute('data-memo-toggle-control'));
+    if (directControl) {
+      directControl.contentEditable = 'false';
+      return;
+    }
+    summary.prepend(createMemoToggleControl());
+  });
+}
+
 function openMemoDialog(key){
   const card = cardByKey(key);
   if (!card) return;
@@ -2756,6 +2798,7 @@ function openMemoDialog(key){
   pendingMemoKey = key;
   memoTarget.textContent = `${cardLabel(card)} · ${card.question}`;
   memoInput.innerHTML = noteHTML(key);
+  prepareMemoToggles();
   prepareMemoMasks();
   memoClearBtn.hidden = !hasNote(key);
   memoDialog.showModal();
@@ -2820,15 +2863,16 @@ function insertMemoToggle(){
   }
 
   const token = `memo-toggle-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  insertMemoHTML(`<details open data-memo-toggle-draft="${escapeAttr(token)}"><summary>토글 제목</summary><div>${selectedHTML || '<br>'}</div></details><div><br></div>`);
+  insertMemoHTML(`<details open data-memo-toggle-draft="${escapeAttr(token)}"><summary><span data-memo-toggle-control contenteditable="false" role="button" aria-label="토글 접기 또는 펼치기">▸</span><span data-memo-toggle-title>토글 제목</span></summary><div>${selectedHTML || '<br>'}</div></details><div><br></div>`);
 
   const toggle = memoInput.querySelector(`[data-memo-toggle-draft="${CSS.escape(token)}"]`);
   if (!toggle) return;
   toggle.removeAttribute('data-memo-toggle-draft');
   const summary = toggle.querySelector(':scope > summary');
   if (!summary) return;
+  const title = summary.querySelector('[data-memo-toggle-title]');
   const titleRange = document.createRange();
-  titleRange.selectNodeContents(summary);
+  titleRange.selectNodeContents(title || summary);
   selection.removeAllRanges();
   selection.addRange(titleRange);
   rememberMemoSelection();
@@ -3376,6 +3420,10 @@ memoInput.addEventListener('pointerup', event => {
 memoInput.addEventListener('pointercancel', cancelMemoMaskPress);
 
 memoInput.addEventListener('click', event => {
+  const summary = event.target.closest('summary');
+  if (summary && memoInput.contains(summary) && !event.target.closest('[data-memo-toggle-control]')) {
+    event.preventDefault();
+  }
   const mask = event.target.closest('[data-memo-mask]');
   if (!mask || !memoInput.contains(mask)) return;
   if (Date.now() < suppressMemoMaskClickUntil) {

@@ -325,6 +325,43 @@
     .diff-fill.level-3 { background: #8f79b8; }
     .diff-fill.level-4 { background: #b85f47; }
     .diff-count { font-size: 12px; font-weight: 700; color: var(--ink-2); width: 18px; text-align: right; flex-shrink: 0; }
+    .language-level-stats { display: grid; gap: 18px; }
+    .language-stat-group + .language-stat-group { padding-top: 17px; border-top: 1px solid var(--border); }
+    .language-stat-head {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+      margin-bottom: 9px;
+    }
+    .language-stat-name { display: inline-flex; align-items: baseline; gap: 7px; font-weight: 800; color: var(--ink); }
+    .language-stat-code { color: var(--accent); font: 700 11px/1 'Space Grotesk', sans-serif; }
+    .language-stat-total { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .language-level-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .language-level-cell {
+      --level-color: var(--accent);
+      min-width: 0; min-height: 118px; padding: 10px;
+      border-top: 3px solid var(--level-color); border-radius: 6px;
+      background: var(--surface-2);
+    }
+    .language-level-cell.level-1 { --level-color: #6fa77b; background: #f3f8f4; }
+    .language-level-cell.level-2 { --level-color: #6d9dc5; background: #f2f7fb; }
+    .language-level-cell.level-3 { --level-color: #8f79b8; background: #f6f3f9; }
+    .language-level-cell.level-4 { --level-color: #b85f47; background: #fff5f1; }
+    .language-level-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .language-level-label { color: var(--muted); font-size: 11px; font-weight: 800; }
+    .language-level-total { color: var(--ink); font: 800 20px/1 'Space Grotesk', sans-serif; }
+    .review-stack {
+      display: flex; width: 100%; height: 6px; margin: 10px 0 8px;
+      overflow: hidden; border-radius: 99px; background: var(--border);
+    }
+    .review-stack-segment { min-width: 2px; height: 100%; }
+    .review-step-0 { background: #d9d1c7; }
+    .review-step-1 { background: #dfa58e; }
+    .review-step-2 { background: #c56f54; }
+    .review-step-3 { background: #984b3b; }
+    .review-step-4 { background: #63352f; }
+    .review-counts { display: flex; flex-wrap: wrap; gap: 4px 7px; }
+    .review-count-item { color: var(--muted); font-size: 11px; line-height: 1.3; white-space: nowrap; }
+    .review-count-item b { margin-right: 3px; color: var(--ink-2); font-weight: 800; }
+    .language-level-empty { margin-top: 12px; color: var(--muted); font-size: 11px; }
     .review-chart {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -620,6 +657,7 @@
       .review-actions { flex-wrap: wrap; }
       .dialog-shell { padding: 16px; }
       .memo-color-tools { width: 100%; }
+      .language-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -773,6 +811,16 @@
               </select>
             </div>
             <div class="sentence-list" id="sentenceList"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">언어 × 난이도 × 복습</span>
+            <span class="card-note">회차별 문장 수</span>
+          </div>
+          <div class="card-body">
+            <div id="languageDifficultyStats"></div>
           </div>
         </div>
 
@@ -1019,6 +1067,7 @@
     listFavorite: document.querySelector("#listFavoriteFilter"),
     list: document.querySelector("#sentenceList"),
     listCount: document.querySelector("#listCount"),
+    languageDifficultyStats: document.querySelector("#languageDifficultyStats"),
     statsManage: document.querySelector("#statsManage"),
     statsReview: document.querySelector("#statsReview"),
     extractFormManage: document.querySelector("#extractFormManage"),
@@ -1464,6 +1513,65 @@
     `).join("");
   }
 
+  function reviewCountDistribution(items) {
+    const counts = new Map();
+    items.forEach(item => {
+      const reviewCount = Math.max(0, Number(item.reviewCount) || 0);
+      counts.set(reviewCount, (counts.get(reviewCount) || 0) + 1);
+    });
+    return [...counts.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([reviewCount, count]) => ({ reviewCount, count }));
+  }
+
+  function renderLanguageDifficultyStats() {
+    const languages = LANGUAGES
+      .map(language => ({
+        ...language,
+        items: sentences.filter(item => item.language === language.code),
+      }))
+      .filter(language => language.items.length > 0);
+
+    if (!languages.length) {
+      els.languageDifficultyStats.innerHTML = `<div class="empty">아직 문장 데이터가 없습니다.</div>`;
+      return;
+    }
+
+    els.languageDifficultyStats.innerHTML = `<div class="language-level-stats">${languages.map(language => `
+      <section class="language-stat-group">
+        <div class="language-stat-head">
+          <span class="language-stat-name"><span class="language-stat-code">${language.short}</span>${language.label}</span>
+          <span class="language-stat-total">${language.items.length}문장</span>
+        </div>
+        <div class="language-level-grid">
+          ${[1, 2, 3, 4].map(level => {
+            const levelItems = language.items.filter(item => item.difficulty === level);
+            const distribution = reviewCountDistribution(levelItems);
+            const distributionLabel = distribution.map(item => `${item.reviewCount}회 ${item.count}개`).join(", ");
+            return `
+              <div class="language-level-cell level-${level}">
+                <div class="language-level-top">
+                  <span class="language-level-label">Lv.${level}</span>
+                  <strong class="language-level-total">${levelItems.length}</strong>
+                </div>
+                ${levelItems.length ? `
+                  <div class="review-stack" aria-label="${distributionLabel}">
+                    ${distribution.map(item => `
+                      <span class="review-stack-segment review-step-${Math.min(item.reviewCount, 4)}" style="width:${item.count / levelItems.length * 100}%" title="${item.reviewCount}회 · ${item.count}개"></span>
+                    `).join("")}
+                  </div>
+                  <div class="review-counts">
+                    ${distribution.map(item => `<span class="review-count-item"><b>${item.reviewCount}회</b>${item.count}</span>`).join("")}
+                  </div>
+                ` : `<div class="language-level-empty">문장 없음</div>`}
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </section>
+    `).join("")}</div>`;
+  }
+
   function renderStats() {
     const total = sentences.length;
     const unreviewed = sentences.filter(i => i.reviewCount === 0).length;
@@ -1545,6 +1653,7 @@
     `;
     els.statsManage.innerHTML = html;
     els.statsReview.innerHTML = html;
+    renderLanguageDifficultyStats();
   }
 
   function resetForm() {

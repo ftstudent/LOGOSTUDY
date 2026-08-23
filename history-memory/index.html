@@ -852,12 +852,13 @@
     border-color: var(--rust);
   }
   .memo-btn{
-    min-height: 28px;
-    padding: 4px 8px;
-    border-color: var(--line);
-    background: transparent;
-    color: var(--ink-soft);
-    font-size: 10px;
+    min-height: 30px;
+    padding: 5px 9px;
+    border-color: var(--brass);
+    background: rgba(237,224,189,.32);
+    color: var(--brass);
+    font-size: 10.5px;
+    font-weight: 600;
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -865,8 +866,8 @@
   .memo-btn:hover,
   .memo-btn.has-note{
     border-color: var(--brass);
-    background: var(--paper-dark);
-    color: var(--brass);
+    background: var(--brass-light);
+    color: var(--rust);
   }
   .memo-dot{
     width: 5px;
@@ -881,12 +882,42 @@
   }
 
   dialog.memo-dialog{
-    width: min(520px, calc(100vw - 32px));
+    width: min(780px, calc(100vw - 32px));
+    max-height: min(820px, calc(100dvh - 32px));
+    overflow-y: auto;
+  }
+  .memo-dialog .dialog-shell{
+    padding: 22px;
+  }
+  .memo-dialog .dialog-title{
+    font-family: 'Noto Serif KR', serif;
+    font-size: 19px;
+    font-weight: 700;
+  }
+  .memo-dialog .dialog-target{
+    margin: 14px 0 0;
+    padding: 11px 13px;
+    border-left: 3px solid var(--rust);
+    background: rgba(247,242,228,.66);
+    color: var(--ink-soft);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.65;
+    letter-spacing: -.012em;
+  }
+  .memo-dialog .dialog-target::before{
+    content: 'MEMO FOR';
+    display: block;
+    margin-bottom: 4px;
+    color: var(--rust);
+    font: 600 9px/1.2 'IBM Plex Mono', monospace;
+    letter-spacing: .12em;
   }
   .memo-editor{
     display: grid;
-    gap: 7px;
-    margin-top: 14px;
+    gap: 8px;
+    margin-top: 16px;
   }
   .memo-editor label{
     font-family: 'IBM Plex Mono', monospace;
@@ -894,19 +925,41 @@
     color: var(--brass);
   }
   .memo-toolbar{
-    min-height: 38px;
-    padding: 4px;
+    padding: 8px;
     border: 1px solid var(--line);
     border-bottom: 0;
     border-radius: 3px 3px 0 0;
     background: var(--paper-dark);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+  }
+  .memo-tool-group{
+    min-width: 0;
+    display: grid;
+    gap: 5px;
+  }
+  .memo-tool-label{
+    color: var(--brass);
+    font: 600 8.5px/1.2 'IBM Plex Mono', monospace;
+    letter-spacing: .1em;
+  }
+  .memo-tool-controls{
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: 4px;
   }
+  .memo-color-group{
+    padding-left: 12px;
+    border-left: 1px solid var(--line);
+  }
+  .memo-mask-group{
+    grid-column: 1 / -1;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
   .memo-font-select{
-    width: 112px;
+    width: 154px;
     height: 30px;
     min-height: 30px;
     padding: 0 24px 0 8px;
@@ -972,10 +1025,7 @@
     color: var(--rust);
   }
   .memo-toolbar-rule{
-    width: 1px;
-    height: 20px;
-    margin: 0 3px;
-    background: var(--line);
+    display: none;
   }
   .memo-color-tools{
     display: inline-flex;
@@ -996,8 +1046,9 @@
   .memo-color-plum{ --memo-swatch: #71586f; }
   .memo-input{
     width: 100%;
-    min-height: 220px;
-    padding: 12px;
+    min-height: 330px;
+    max-height: min(48dvh, 520px);
+    padding: 18px 20px;
     border: 1px solid var(--line);
     border-radius: 0 0 3px 3px;
     background: var(--card);
@@ -1006,7 +1057,8 @@
     overflow-y: auto;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-    font: 14px/1.65 'Fraunces', 'Noto Serif KR', serif;
+    font: 14.5px/1.78 'Fraunces', 'Noto Serif KR', serif;
+    letter-spacing: -.01em;
   }
   .memo-input:empty::before{
     content: attr(data-placeholder);
@@ -1017,6 +1069,23 @@
   .memo-input:focus{
     border-color: var(--rust);
     box-shadow: 0 0 0 3px rgba(162,62,44,0.12);
+  }
+  .memo-input p,
+  .memo-input blockquote,
+  .memo-input ul,
+  .memo-input ol{
+    margin-top: 0;
+    margin-bottom: .8em;
+  }
+  .memo-input blockquote{
+    margin-left: 0;
+    padding-left: 12px;
+    border-left: 3px solid var(--brass);
+    color: var(--ink-soft);
+  }
+  .memo-input ul,
+  .memo-input ol{
+    padding-left: 1.5em;
   }
   .memo-input [data-memo-color="ink"]{ color: #232f49; }
   .memo-input [data-memo-color="rust"]{ color: #a23e2c; }
@@ -1436,8 +1505,33 @@
     dialog.memo-dialog{
       width: calc(100vw - 24px);
     }
+    .memo-dialog .dialog-shell{
+      padding: 16px;
+    }
+    .memo-dialog .dialog-target{
+      max-height: 110px;
+      overflow-y: auto;
+    }
+    .memo-toolbar{
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .memo-color-group,
+    .memo-mask-group{
+      grid-column: auto;
+      padding: 7px 0 0;
+      border-top: 1px solid var(--line);
+      border-left: 0;
+    }
+    .memo-tool-controls{
+      flex-wrap: wrap;
+    }
+    .memo-font-select{
+      flex: 1 1 146px;
+    }
     .memo-input{
-      min-height: 250px;
+      min-height: min(42dvh, 330px);
+      max-height: 46dvh;
+      padding: 15px;
     }
     .card-editor-form{
       grid-template-columns: minmax(0, 1fr);
@@ -1485,10 +1579,24 @@
     line-height: 1.5;
   }
   .headword{
-    font-family: 'Noto Sans KR', sans-serif;
-    font-size: 20px;
-    line-height: 1.48;
+    font-family: 'Fraunces', 'Noto Serif KR', serif;
+    font-size: clamp(15.5px, 1.35vw, 17px);
+    font-weight: 600;
+    line-height: 1.64;
+    letter-spacing: -.018em;
+    margin-bottom: 10px;
     white-space: pre-wrap;
+  }
+  .card{
+    padding: 17px 16px 14px;
+  }
+  .card-top{
+    margin-bottom: 9px;
+  }
+  .editor-field textarea.question-input{
+    font-family: 'Fraunces', 'Noto Serif KR', serif;
+    font-size: 14px;
+    line-height: 1.65;
   }
   .hint-label{
     display: block;
@@ -1587,14 +1695,16 @@
     box-shadow: 0 0 0 3px rgba(162,62,44,.12);
   }
   .memo-mask-tools{
-    display: inline-flex;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: center;
-    gap: 3px;
+    gap: 6px;
+    width: 100%;
   }
   .memo-mask-btn{
     width: auto;
-    min-width: 54px;
-    padding: 0 7px;
+    min-width: 0;
+    padding: 0 9px;
     border: 1px solid var(--mask-color) !important;
     color: var(--mask-color);
     font-family: 'Noto Sans KR', sans-serif;
@@ -1628,7 +1738,7 @@
     margin: 8px 0;
     border-collapse: collapse;
     table-layout: auto;
-    font: 12.5px/1.5 'Noto Sans KR', sans-serif;
+    font: 12.5px/1.55 'Noto Serif KR', serif;
     white-space: normal;
   }
   .memo-input th,
@@ -1651,17 +1761,19 @@
   .memo-input [data-memo-mask][data-mask-level="2"].is-revealed{ background: #cce1df; }
   .memo-input [data-memo-mask][data-mask-level="3"].is-revealed{ background: #ddd3e5; }
   .memo-guide{
-    margin: 6px 0 0;
+    margin: 4px 0 0;
+    padding: 8px 10px;
+    border-left: 2px solid var(--line);
+    background: rgba(247,242,228,.48);
     color: var(--ink-soft);
     font-size: 10.5px;
-    line-height: 1.5;
+    line-height: 1.6;
   }
   .page-ref{ white-space: nowrap; }
   #legend-section{ display: none; }
 
   @media (max-width: 640px){
     .history-search{ width: 100% !important; }
-    .memo-mask-tools{ order: 4; width: 100%; }
     .memo-mask-btn{ flex: 1; }
     .data-actions{ width: 100%; }
   }
@@ -1814,31 +1926,41 @@
     <div class="memo-editor">
       <label id="memoInputLabel">서술 정리 · 비교표 · 연표 · 연결 개념</label>
       <div class="memo-toolbar" role="toolbar" aria-label="메모 서식">
-        <select class="memo-font-select" id="memoFontSelect" aria-label="글꼴 선택" title="글꼴 선택">
-          <option value="">글꼴</option>
-          <option value="sans">기본 고딕</option>
-          <option value="plex">플렉스 고딕</option>
-          <option value="serif">차분한 명조</option>
-          <option value="editorial">에디토리얼</option>
-          <option value="mono">모노</option>
-        </select>
-        <button type="button" class="memo-format-btn" data-command="bold" aria-label="굵게" aria-pressed="false" title="굵게">B</button>
-        <button type="button" class="memo-format-btn" data-command="italic" aria-label="기울임" aria-pressed="false" title="기울임">I</button>
-        <button type="button" class="memo-format-btn" data-command="underline" aria-label="밑줄" aria-pressed="false" title="밑줄">U</button>
-        <button type="button" class="memo-format-btn memo-table-btn" id="memoTableBtn" aria-label="3×3 표 삽입" title="3×3 표 삽입">표</button>
-        <span class="memo-mask-tools" aria-label="위계별 가리기">
-          <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="1" aria-label="선택 영역 1단계 가리기" title="1단계 개념 가리기">가림 1</button>
-          <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="2" aria-label="선택 영역 2단계 가리기" title="2단계 개념 가리기">가림 2</button>
-          <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="3" aria-label="선택 영역 3단계 가리기" title="3단계 개념 가리기">가림 3</button>
-        </span>
-        <span class="memo-color-tools">
-          <span class="memo-toolbar-rule" aria-hidden="true"></span>
-          <button type="button" class="memo-color-btn memo-color-ink" data-memo-color="ink" aria-label="잉크 남색" title="잉크 남색"><span class="memo-swatch" aria-hidden="true"></span></button>
-          <button type="button" class="memo-color-btn memo-color-rust" data-memo-color="rust" aria-label="러스트" title="러스트"><span class="memo-swatch" aria-hidden="true"></span></button>
-          <button type="button" class="memo-color-btn memo-color-brass" data-memo-color="brass" aria-label="브라스" title="브라스"><span class="memo-swatch" aria-hidden="true"></span></button>
-          <button type="button" class="memo-color-btn memo-color-teal" data-memo-color="teal" aria-label="뮤트 틸" title="뮤트 틸"><span class="memo-swatch" aria-hidden="true"></span></button>
-          <button type="button" class="memo-color-btn memo-color-plum" data-memo-color="plum" aria-label="플럼" title="플럼"><span class="memo-swatch" aria-hidden="true"></span></button>
-        </span>
+        <div class="memo-tool-group">
+          <span class="memo-tool-label">글꼴 · 서식</span>
+          <div class="memo-tool-controls">
+            <select class="memo-font-select" id="memoFontSelect" aria-label="글꼴 선택" title="글꼴 선택">
+              <option value="">에디토리얼 명조 · 기본</option>
+              <option value="sans">기본 고딕</option>
+              <option value="plex">플렉스 고딕</option>
+              <option value="serif">차분한 명조</option>
+              <option value="editorial">에디토리얼 명조</option>
+              <option value="mono">모노</option>
+            </select>
+            <button type="button" class="memo-format-btn" data-command="bold" aria-label="굵게" aria-pressed="false" title="굵게">B</button>
+            <button type="button" class="memo-format-btn" data-command="italic" aria-label="기울임" aria-pressed="false" title="기울임">I</button>
+            <button type="button" class="memo-format-btn" data-command="underline" aria-label="밑줄" aria-pressed="false" title="밑줄">U</button>
+            <button type="button" class="memo-format-btn memo-table-btn" id="memoTableBtn" aria-label="3×3 표 삽입" title="3×3 표 삽입">표</button>
+          </div>
+        </div>
+        <div class="memo-tool-group memo-color-group">
+          <span class="memo-tool-label">글자색</span>
+          <span class="memo-color-tools memo-tool-controls">
+            <button type="button" class="memo-color-btn memo-color-ink" data-memo-color="ink" aria-label="잉크 남색" title="잉크 남색"><span class="memo-swatch" aria-hidden="true"></span></button>
+            <button type="button" class="memo-color-btn memo-color-rust" data-memo-color="rust" aria-label="러스트" title="러스트"><span class="memo-swatch" aria-hidden="true"></span></button>
+            <button type="button" class="memo-color-btn memo-color-brass" data-memo-color="brass" aria-label="브라스" title="브라스"><span class="memo-swatch" aria-hidden="true"></span></button>
+            <button type="button" class="memo-color-btn memo-color-teal" data-memo-color="teal" aria-label="뮤트 틸" title="뮤트 틸"><span class="memo-swatch" aria-hidden="true"></span></button>
+            <button type="button" class="memo-color-btn memo-color-plum" data-memo-color="plum" aria-label="플럼" title="플럼"><span class="memo-swatch" aria-hidden="true"></span></button>
+          </span>
+        </div>
+        <div class="memo-tool-group memo-mask-group">
+          <span class="memo-tool-label">선택한 내용을 개념 위계별로 가리기</span>
+          <span class="memo-mask-tools" aria-label="위계별 가리기">
+            <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="1" aria-label="선택 영역 1단계 가리기" title="1단계 개념 가리기">가림 1 · 핵심</button>
+            <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="2" aria-label="선택 영역 2단계 가리기" title="2단계 개념 가리기">가림 2 · 하위</button>
+            <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="3" aria-label="선택 영역 3단계 가리기" title="3단계 개념 가리기">가림 3 · 세부</button>
+          </span>
+        </div>
       </div>
       <div id="memoInput" class="memo-input" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="memoInputLabel" data-placeholder="내용을 적거나 외부 표를 그대로 붙여넣으세요."></div>
       <p class="memo-guide">표 버튼은 편집 가능한 3×3 표를 만듭니다. Excel·Numbers·웹페이지 표를 붙여넣으면 표 구조를 유지합니다. 가려진 영역은 눌러서 열고 닫을 수 있습니다.</p>
@@ -2403,7 +2525,7 @@ function cardHTML(card){
             <button type="button" class="custom-card-action edit-card-btn" data-id="${escapeAttr(card.id)}" aria-label="${label} 수정" title="수정">✎</button>
             <button type="button" class="custom-card-action delete-card-btn" data-id="${escapeAttr(card.id)}" aria-label="${label} 삭제" title="삭제">×</button>
           </span>
-          <button type="button" class="memo-btn${hasMemo ? ' has-note' : ''}" data-key="${escapeAttr(key)}" aria-label="${label} 메모${hasMemo ? ' 있음' : ''}" title="${hasMemo ? '메모 열기 · 내용 있음' : '메모 열기'}"><span class="memo-dot" aria-hidden="true"></span>메모</button>
+          <button type="button" class="memo-btn${hasMemo ? ' has-note' : ''}" data-key="${escapeAttr(key)}" aria-label="${label} 학습 메모${hasMemo ? ' 있음' : ''}" title="${hasMemo ? '학습 메모 열기 · 내용 있음' : '학습 메모 열기'}"><span class="memo-dot" aria-hidden="true"></span>학습 메모</button>
         </span>
         <span class="page-ref">${card.groups.length ? `${card.groups.length} group` : 'ungrouped'}</span>
       </div>

@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Lora:ital,wght@0,600;0,700;1,600&family=Nanum+Gothic+Coding:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #faf8f4;
@@ -279,6 +279,22 @@
     .pill-level-3 { background: #f4eff8; color: #75609a; border-color: #d9cbe7; }
     .pill-level-4 { background: #fff1eb; color: #b85f47; border-color: #efc1ad; }
     .s-actions { display: flex; gap: 4px; align-items: flex-start; flex-shrink: 0; }
+    .memo-btn {
+      min-height: 30px; padding: 0 9px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      background: var(--surface); color: var(--muted);
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      font-size: 12px; font-weight: 700; white-space: nowrap;
+      transition: all .12s;
+    }
+    .memo-btn:hover, .memo-btn.has-note {
+      border-color: #d8b07e; background: #fffaf0; color: #8a6127;
+    }
+    .memo-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: currentColor; opacity: .25;
+    }
+    .memo-btn.has-note .memo-dot { background: var(--accent); opacity: 1; }
 
     /* ── Stats ── */
     .stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
@@ -450,6 +466,7 @@
       gap: 8px;
       align-items: end;
     }
+    .review-memo-row { display: flex; justify-content: flex-end; margin-top: 12px; }
     .review-actions { display: flex; gap: 10px; margin-top: 22px; }
     .review-actions .btn { flex: 1; height: 44px; font-size: 15px; }
     .review-done {
@@ -492,6 +509,101 @@
     }
     .data-actions .btn { width: 100%; }
 
+    /* ── Memo editor ── */
+    dialog.memo-dialog {
+      width: min(560px, calc(100vw - 28px));
+      max-height: calc(100dvh - 28px);
+      padding: 0; border: 1.5px solid var(--border); border-radius: var(--r);
+      background: var(--surface); color: var(--ink);
+      box-shadow: 0 18px 52px rgba(50,25,10,.22); overflow-y: auto;
+    }
+    dialog.memo-dialog::backdrop { background: rgba(28,24,22,.42); backdrop-filter: blur(2px); }
+    .dialog-shell { padding: 20px; }
+    .dialog-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding-bottom: 13px; border-bottom: 1px solid var(--border);
+    }
+    .dialog-title { font-size: 18px; font-weight: 800; }
+    .dialog-close {
+      width: 34px; height: 34px; border: 1.5px solid var(--border); border-radius: 8px;
+      background: var(--surface); color: var(--muted); font-size: 21px; line-height: 1;
+    }
+    .dialog-close:hover { background: var(--surface-2); color: var(--ink); }
+    .dialog-target {
+      margin: 13px 0 0; color: var(--accent); font-size: 13px; font-weight: 700;
+      line-height: 1.5; overflow-wrap: anywhere;
+    }
+    .memo-editor { display: grid; gap: 7px; margin-top: 14px; }
+    .memo-editor > label { color: var(--muted); font-size: 11px; font-weight: 700; }
+    .memo-toolbar {
+      min-height: 40px; padding: 4px;
+      border: 1.5px solid var(--border); border-bottom: 0;
+      border-radius: 8px 8px 0 0; background: var(--surface-2);
+      display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+    }
+    .memo-font-select {
+      width: 126px; height: 30px; min-height: 30px; padding: 0 26px 0 8px;
+      border: 1px solid transparent; border-radius: 6px; background-color: transparent;
+      color: var(--ink); font: 11px/1 'Noto Sans KR', sans-serif; cursor: pointer;
+    }
+    .memo-font-select:hover, .memo-font-select:focus { border-color: var(--border); background-color: var(--surface); }
+    .memo-format-btn, .memo-color-btn {
+      width: 30px; height: 30px; min-height: 30px; padding: 0;
+      border: 1px solid transparent; border-radius: 6px;
+      background: transparent; color: var(--ink-2);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .memo-format-btn { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 700; }
+    .memo-format-btn[data-command="italic"] { font-style: italic; font-weight: 600; }
+    .memo-format-btn[data-command="underline"] { text-decoration: underline; text-underline-offset: 2px; }
+    .memo-mask-btn { width: 42px; font-family: inherit; font-size: 11px; }
+    .memo-format-btn:hover, .memo-color-btn:hover,
+    .memo-format-btn[aria-pressed="true"] { border-color: var(--border); background: var(--surface); color: var(--accent); }
+    .memo-toolbar-rule { width: 1px; height: 20px; margin: 0 3px; background: var(--border); }
+    .memo-color-tools { display: inline-flex; align-items: center; gap: 4px; }
+    .memo-swatch {
+      width: 15px; height: 15px; border: 1px solid rgba(28,24,22,.16);
+      border-radius: 50%; background: var(--memo-swatch);
+    }
+    .memo-color-ink { --memo-swatch: #3d3530; }
+    .memo-color-rust { --memo-swatch: #b85f47; }
+    .memo-color-brass { --memo-swatch: #8a6b2d; }
+    .memo-color-teal { --memo-swatch: #48736d; }
+    .memo-color-plum { --memo-swatch: #755b74; }
+    .memo-input {
+      width: 100%; min-height: 220px; max-height: min(420px, calc(100dvh - 280px));
+      padding: 13px; border: 1.5px solid var(--border); border-radius: 0 0 8px 8px;
+      background: var(--surface); color: var(--ink); outline: none; overflow-y: auto;
+      white-space: pre-wrap; overflow-wrap: anywhere;
+      font: 15px/1.7 'Fraunces', 'Noto Serif KR', serif;
+    }
+    .memo-input:empty::before { content: attr(data-placeholder); color: var(--muted); pointer-events: none; }
+    .memo-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(201,100,66,.13); }
+    .memo-input [data-memo-color="ink"] { color: #3d3530; }
+    .memo-input [data-memo-color="rust"] { color: #b85f47; }
+    .memo-input [data-memo-color="brass"] { color: #8a6b2d; }
+    .memo-input [data-memo-color="teal"] { color: #48736d; }
+    .memo-input [data-memo-color="plum"] { color: #755b74; }
+    .memo-input [data-memo-font="sans"] { font-family: 'Noto Sans KR', sans-serif; }
+    .memo-input [data-memo-font="plex"] { font-family: 'IBM Plex Sans KR', sans-serif; }
+    .memo-input [data-memo-font="serif"] { font-family: 'Noto Serif KR', serif; }
+    .memo-input [data-memo-font="editorial"] { font-family: 'Fraunces', 'Noto Serif KR', serif; }
+    .memo-input [data-memo-font="mono"] { font-family: 'Nanum Gothic Coding', monospace; }
+    .memo-input [data-memo-mask] {
+      padding: 0 2px; border-radius: 3px; background: var(--ink);
+      color: transparent !important; cursor: pointer; caret-color: transparent;
+      box-decoration-break: clone; -webkit-box-decoration-break: clone;
+      -webkit-user-select: none; user-select: none; touch-action: manipulation;
+    }
+    .memo-input [data-memo-mask]:not(.is-revealed) * { color: transparent !important; }
+    .memo-input [data-memo-mask].is-revealed {
+      background: #f5dfcf; color: inherit !important; caret-color: currentColor;
+      -webkit-user-select: text; user-select: text;
+    }
+    .memo-input [data-memo-mask].is-editing { outline: 1px solid var(--accent); outline-offset: 1px; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+    .memo-clear-btn { margin-right: auto; color: var(--danger); }
+
     /* ── Responsive ── */
     @media (max-width: 860px) {
       .two-col, .review-col { grid-template-columns: 1fr; }
@@ -505,6 +617,8 @@
       .review-stage { padding: 22px 18px; }
       .review-edit-row { grid-template-columns: 1fr; }
       .review-actions { flex-wrap: wrap; }
+      .dialog-shell { padding: 16px; }
+      .memo-color-tools { width: 100%; }
     }
   </style>
 </head>
@@ -785,6 +899,47 @@
 
 </main>
 
+<dialog id="memoDialog" class="memo-dialog" aria-labelledby="memoDialogTitle">
+  <form id="memoForm" class="dialog-shell">
+    <div class="dialog-head">
+      <h2 class="dialog-title" id="memoDialogTitle">학습 메모</h2>
+      <button type="button" class="dialog-close" id="memoCloseBtn" aria-label="닫기">×</button>
+    </div>
+    <p class="dialog-target" id="memoTarget"></p>
+    <div class="memo-editor">
+      <label id="memoInputLabel">연관 단어 · 구문 · 문법 · 나만의 암기법</label>
+      <div class="memo-toolbar" role="toolbar" aria-label="메모 서식">
+        <select class="memo-font-select" id="memoFontSelect" aria-label="글꼴 선택 · 기본 에디토리얼" title="글꼴 선택 · 기본 에디토리얼">
+          <option value="">기본 · 에디토리얼</option>
+          <option value="sans">기본 고딕</option>
+          <option value="plex">플렉스 고딕</option>
+          <option value="serif">차분한 명조</option>
+          <option value="editorial">에디토리얼 적용</option>
+          <option value="mono">모노</option>
+        </select>
+        <button type="button" class="memo-format-btn" data-command="bold" aria-label="굵게" aria-pressed="false" title="굵게">B</button>
+        <button type="button" class="memo-format-btn" data-command="italic" aria-label="기울임" aria-pressed="false" title="기울임">I</button>
+        <button type="button" class="memo-format-btn" data-command="underline" aria-label="밑줄" aria-pressed="false" title="밑줄">U</button>
+        <button type="button" class="memo-format-btn memo-mask-btn" id="memoMaskBtn" aria-label="선택 영역 가리기 또는 가리개 해제" title="선택 영역 가리기 또는 가리개 해제">가림</button>
+        <span class="memo-color-tools">
+          <span class="memo-toolbar-rule" aria-hidden="true"></span>
+          <button type="button" class="memo-color-btn memo-color-ink" data-memo-color="ink" aria-label="잉크" title="잉크"><span class="memo-swatch" aria-hidden="true"></span></button>
+          <button type="button" class="memo-color-btn memo-color-rust" data-memo-color="rust" aria-label="러스트" title="러스트"><span class="memo-swatch" aria-hidden="true"></span></button>
+          <button type="button" class="memo-color-btn memo-color-brass" data-memo-color="brass" aria-label="브라스" title="브라스"><span class="memo-swatch" aria-hidden="true"></span></button>
+          <button type="button" class="memo-color-btn memo-color-teal" data-memo-color="teal" aria-label="뮤트 틸" title="뮤트 틸"><span class="memo-swatch" aria-hidden="true"></span></button>
+          <button type="button" class="memo-color-btn memo-color-plum" data-memo-color="plum" aria-label="플럼" title="플럼"><span class="memo-swatch" aria-hidden="true"></span></button>
+        </span>
+      </div>
+      <div id="memoInput" class="memo-input" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="memoInputLabel" data-placeholder="이 문장을 다시 볼 때 함께 떠올리고 싶은 내용을 적어두세요."></div>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-ghost memo-clear-btn" id="memoClearBtn">메모 지우기</button>
+      <button type="button" class="btn btn-secondary" id="memoCancelBtn">취소</button>
+      <button type="submit" class="btn btn-primary">저장</button>
+    </div>
+  </form>
+</dialog>
+
 <script type="module">
   import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -803,6 +958,20 @@
   const PUBLIC_DATA_PATHS = ["recall/data/sentences.json", "docs/recall/data/sentences.json"];
   const AUTO_SYNC_DELAY = 1200;
   const REVIEW_INTERVAL_DAYS = [0, 3, 7, 14, 30, 60, 120, 180];
+  const MEMO_COLOR_VALUES = Object.freeze({
+    ink: "#3d3530",
+    rust: "#b85f47",
+    brass: "#8a6b2d",
+    teal: "#48736d",
+    plum: "#755b74",
+  });
+  const MEMO_FONT_VALUES = Object.freeze({
+    sans: "Noto Sans KR",
+    plex: "IBM Plex Sans KR",
+    serif: "Noto Serif KR",
+    editorial: "Fraunces",
+    mono: "Nanum Gothic Coding",
+  });
 
   const LANGUAGES = [
     { code: "en", label: "영어", short: "EN", aliases: ["english", "영어"] },
@@ -822,6 +991,12 @@
       [lang.short.toLowerCase(), lang.code],
       ...lang.aliases.map(alias => [alias.toLowerCase(), lang.code]),
     ])
+  );
+  const memoColorNamesByValue = Object.fromEntries(
+    Object.entries(MEMO_COLOR_VALUES).map(([name, value]) => [canonicalMemoColor(value), name])
+  );
+  const memoFontNamesByValue = Object.fromEntries(
+    Object.entries(MEMO_FONT_VALUES).map(([name, value]) => [canonicalMemoFont(value), name])
   );
 
   const els = {
@@ -866,7 +1041,19 @@
     mergeSyncBtn: document.querySelector("#mergeSyncBtn"),
     pullSyncBtn: document.querySelector("#pullSyncBtn"),
     pushSyncBtn: document.querySelector("#pushSyncBtn"),
+    memoDialog: document.querySelector("#memoDialog"),
+    memoForm: document.querySelector("#memoForm"),
+    memoTarget: document.querySelector("#memoTarget"),
+    memoInput: document.querySelector("#memoInput"),
+    memoFontSelect: document.querySelector("#memoFontSelect"),
+    memoMaskBtn: document.querySelector("#memoMaskBtn"),
+    memoClearBtn: document.querySelector("#memoClearBtn"),
+    memoCloseBtn: document.querySelector("#memoCloseBtn"),
+    memoCancelBtn: document.querySelector("#memoCancelBtn"),
   };
+  const memoFormatBtns = document.querySelectorAll(".memo-format-btn[data-command]");
+  const memoColorBtns = document.querySelectorAll("[data-memo-color]");
+  const memoToolbar = document.querySelector(".memo-toolbar");
 
   let sentences = loadSentences();
   let editingId = null;
@@ -882,6 +1069,12 @@
   let syncInFlight = false;
   let syncQueued = false;
   let cloudLoaded = false;
+  let pendingMemoId = null;
+  let savedMemoRange = null;
+  let memoReturnScroll = null;
+  let memoScrollRestoreTimer = null;
+  let memoMaskPress = null;
+  let suppressMemoMaskClickUntil = 0;
 
   // ── Tabs ──
   const tabBtns = document.querySelectorAll(".tab-btn");
@@ -910,6 +1103,9 @@
     const language = normalizeLanguage(item.language || item.lang || item.sourceLanguage || "en");
     const reviewCount = Math.max(0, Number(item.reviewCount) || 0);
     const lastReviewedAt = item.lastReviewedAt || null;
+    const memoSource = typeof item.memoHtml === "string"
+      ? item.memoHtml
+      : plainTextToMemoHTML(item.memo);
     return {
       id: item.id || uid(),
       original: String(item.original).trim(),
@@ -924,6 +1120,8 @@
       lastReviewNumber: lastReviewedAt
         ? Math.max(1, Number(item.lastReviewNumber) || reviewCount || 1)
         : 0,
+      memoHtml: sanitizeMemoHTML(memoSource),
+      memoUpdatedAt: item.memoUpdatedAt || null,
     };
   }
 
@@ -1117,6 +1315,96 @@
       .replace(/\[([^\]\n]+)\]/g, "<strong>$1</strong>");
   }
 
+  function canonicalMemoColor(value) {
+    const probe = document.createElement("span");
+    probe.style.color = value || "";
+    return probe.style.color.replace(/\s/g, "").toLowerCase();
+  }
+
+  function canonicalMemoFont(value) {
+    return String(value || "").split(",")[0].replace(/["']/g, "").trim().toLowerCase();
+  }
+
+  function sanitizeMemoHTML(value) {
+    const template = document.createElement("template");
+    template.innerHTML = String(value || "").slice(0, 20000);
+    let remaining = 4000;
+
+    function cleanNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (remaining <= 0) return document.createTextNode("");
+        const text = node.textContent.slice(0, remaining);
+        remaining -= text.length;
+        return document.createTextNode(text);
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return document.createDocumentFragment();
+
+      const tag = node.tagName.toLowerCase();
+      if (tag === "br") return document.createElement("br");
+
+      const style = node.style;
+      const namedColor = MEMO_COLOR_VALUES[node.dataset.memoColor]
+        ? node.dataset.memoColor
+        : memoColorNamesByValue[canonicalMemoColor(style.color || node.getAttribute("color"))];
+      const namedFont = MEMO_FONT_VALUES[node.dataset.memoFont]
+        ? node.dataset.memoFont
+        : memoFontNamesByValue[canonicalMemoFont(style.fontFamily || node.getAttribute("face"))];
+      const maskKey = /^[a-z0-9-]{6,40}$/i.test(node.dataset.memoMask || "")
+        ? node.dataset.memoMask
+        : "";
+      const isBold = tag === "strong" || tag === "b" || /^(bold|[6-9]00)$/i.test(style.fontWeight);
+      const isItalic = tag === "em" || tag === "i" || /^(italic|oblique)$/i.test(style.fontStyle);
+      const isUnderlined = tag === "u" || /\bunderline\b/i.test(style.textDecorationLine || style.textDecoration);
+      const isBlock = tag === "div" || tag === "p";
+
+      let clean = document.createDocumentFragment();
+      [...node.childNodes].forEach(child => clean.appendChild(cleanNode(child)));
+
+      function wrap(tagName, content) {
+        const wrapper = document.createElement(tagName);
+        wrapper.appendChild(content);
+        return wrapper;
+      }
+
+      if (isUnderlined) clean = wrap("u", clean);
+      if (isItalic) clean = wrap("em", clean);
+      if (isBold) clean = wrap("strong", clean);
+      if (namedColor) {
+        clean = wrap("span", clean);
+        clean.dataset.memoColor = namedColor;
+      }
+      if (namedFont) {
+        clean = wrap("span", clean);
+        clean.dataset.memoFont = namedFont;
+      }
+      if (maskKey) {
+        clean = wrap("span", clean);
+        clean.dataset.memoMask = maskKey;
+      }
+      if (isBlock) clean = wrap("div", clean);
+      return clean;
+    }
+
+    const output = document.createElement("div");
+    [...template.content.childNodes].forEach(child => output.appendChild(cleanNode(child)));
+    return output.innerHTML;
+  }
+
+  function plainTextToMemoHTML(value) {
+    return escapeHtml(String(value || "")).replace(/\r?\n/g, "<br>");
+  }
+
+  function memoText(html) {
+    if (!html) return "";
+    const holder = document.createElement("div");
+    holder.innerHTML = sanitizeMemoHTML(html);
+    return holder.textContent.replace(/\u00a0/g, " ").trim();
+  }
+
+  function hasMemo(item) {
+    return Boolean(item && memoText(item.memoHtml));
+  }
+
   // ── Render ──
   function renderAll() {
     renderList();
@@ -1133,7 +1421,7 @@
       .filter(i => language === "all" || i.language === language)
       .filter(i => difficulty === "all" || String(i.difficulty) === difficulty)
       .filter(i => favorite === "all" || (favorite === "fav" ? i.favorite : !i.favorite))
-      .filter(i => !keyword || `${i.original} ${i.translation}`.toLowerCase().includes(keyword))
+      .filter(i => !keyword || `${i.original} ${i.translation} ${memoText(i.memoHtml)}`.toLowerCase().includes(keyword))
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
 
@@ -1166,6 +1454,7 @@
           </div>
         </div>
         <div class="s-actions">
+          <button class="memo-btn ${hasMemo(item) ? "has-note" : ""}" data-action="memo" title="${hasMemo(item) ? "메모 열기 · 내용 있음" : "메모 열기"}" type="button"><span class="memo-dot" aria-hidden="true"></span>메모</button>
           <button class="btn-icon ${item.favorite ? "star-on" : ""}" data-action="favorite" title="즐겨찾기" type="button">★</button>
           <button class="btn-icon" data-action="edit" title="수정" type="button">✎</button>
           <button class="btn-icon del" data-action="delete" title="삭제" type="button">✕</button>
@@ -1333,6 +1622,10 @@
     const item = sentences.find(e => e.id === id);
     if (!item) return;
 
+    if (button.dataset.action === "memo") {
+      openMemoDialog(item.id);
+      return;
+    }
     if (button.dataset.action === "favorite") {
       item.favorite = !item.favorite;
       item.updatedAt = new Date().toISOString();
@@ -1470,6 +1763,9 @@
           </div>
         </form>
       ` : ""}
+      <div class="review-memo-row">
+        <button class="memo-btn ${hasMemo(item) ? "has-note" : ""}" id="reviewMemoBtn" type="button" title="${hasMemo(item) ? "메모 열기 · 내용 있음" : "메모 열기"}"><span class="memo-dot" aria-hidden="true"></span>메모</button>
+      </div>
       <div class="review-actions">
         <button class="btn btn-secondary" id="showAnswerBtn" type="button" ${showTranslation ? "disabled" : ""}>해석 확인</button>
         <button class="btn btn-primary" id="completeReviewBtn" type="button">복습 완료 ✓</button>
@@ -1491,6 +1787,184 @@
     saveSentences();
     queueAutoSync();
     renderAll();
+  }
+
+  function focusMemoInput() {
+    const scrollPosition = { x: window.scrollX, y: window.scrollY };
+    try {
+      els.memoInput.focus({ preventScroll: true });
+    } catch {
+      els.memoInput.focus();
+    }
+    restoreMemoPageScroll(scrollPosition);
+  }
+
+  function restoreMemoPageScroll(position = memoReturnScroll) {
+    if (!position) return;
+    window.scrollTo(position.x, position.y);
+  }
+
+  function isTouchFirstDevice() {
+    return matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 1;
+  }
+
+  function prepareMemoMasks() {
+    if (!isTouchFirstDevice()) return;
+    els.memoInput.querySelectorAll("[data-memo-mask]").forEach(mask => {
+      mask.contentEditable = "false";
+    });
+  }
+
+  function openMemoDialog(id) {
+    const item = sentences.find(sentence => sentence.id === id);
+    if (!item) return;
+    const openingScroll = { x: window.scrollX, y: window.scrollY };
+    memoReturnScroll = openingScroll;
+    pendingMemoId = id;
+    els.memoTarget.textContent = item.original;
+    els.memoInput.innerHTML = sanitizeMemoHTML(item.memoHtml);
+    prepareMemoMasks();
+    els.memoClearBtn.hidden = !hasMemo(item);
+    els.memoDialog.showModal();
+    restoreMemoPageScroll(openingScroll);
+    requestAnimationFrame(() => {
+      if (!isTouchFirstDevice()) focusMemoInput();
+      restoreMemoPageScroll(openingScroll);
+      requestAnimationFrame(() => restoreMemoPageScroll(openingScroll));
+    });
+    clearTimeout(memoScrollRestoreTimer);
+    memoScrollRestoreTimer = setTimeout(() => restoreMemoPageScroll(openingScroll), 120);
+  }
+
+  function closeMemoAfterSave(html) {
+    const item = sentences.find(sentence => sentence.id === pendingMemoId);
+    if (!item) return;
+    const now = new Date().toISOString();
+    item.memoHtml = sanitizeMemoHTML(html);
+    item.memoUpdatedAt = now;
+    item.updatedAt = now;
+    saveSentences();
+    queueAutoSync();
+    els.memoDialog.close();
+    renderAll();
+  }
+
+  function rememberMemoSelection() {
+    const selection = window.getSelection();
+    if (!selection.rangeCount || !els.memoInput.contains(selection.anchorNode) || !els.memoInput.contains(selection.focusNode)) return;
+    savedMemoRange = selection.getRangeAt(0).cloneRange();
+  }
+
+  function restoreMemoSelection() {
+    focusMemoInput();
+    if (!savedMemoRange) return;
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(savedMemoRange);
+  }
+
+  function unwrapMemoMaskGroups(groups) {
+    [...els.memoInput.querySelectorAll("[data-memo-mask]")].forEach(mask => {
+      if (!groups.has(mask.dataset.memoMask)) return;
+      const parent = mask.parentNode;
+      mask.replaceWith(...mask.childNodes);
+      parent?.normalize();
+    });
+  }
+
+  function selectedMemoTextNodes(range) {
+    const walker = document.createTreeWalker(els.memoInput, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (!node.textContent || !range.intersectsNode(node)) continue;
+      const start = node === range.startContainer ? range.startOffset : 0;
+      const end = node === range.endContainer ? range.endOffset : node.textContent.length;
+      if (end > start) nodes.push({ node, start, end });
+    }
+    return nodes;
+  }
+
+  function toggleSelectedMemoMask() {
+    restoreMemoSelection();
+    const selection = window.getSelection();
+    if (!selection.rangeCount || selection.isCollapsed) return;
+    const range = selection.getRangeAt(0);
+    if (!els.memoInput.contains(range.commonAncestorContainer)) return;
+
+    const existingGroups = new Set(
+      [...els.memoInput.querySelectorAll("[data-memo-mask]")]
+        .filter(mask => range.intersectsNode(mask))
+        .map(mask => mask.dataset.memoMask)
+    );
+    if (existingGroups.size) {
+      unwrapMemoMaskGroups(existingGroups);
+      savedMemoRange = null;
+      focusMemoInput();
+      return;
+    }
+
+    const parts = selectedMemoTextNodes(range);
+    if (!parts.length) return;
+    const maskKey = `m${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+    parts.reverse().forEach(({ node, start, end }) => {
+      if (!node.isConnected) return;
+      if (end < node.textContent.length) node.splitText(end);
+      const selected = start > 0 ? node.splitText(start) : node;
+      const mask = document.createElement("span");
+      mask.dataset.memoMask = maskKey;
+      if (isTouchFirstDevice()) mask.contentEditable = "false";
+      selected.replaceWith(mask);
+      mask.appendChild(selected);
+    });
+    savedMemoRange = null;
+    selection.removeAllRanges();
+    focusMemoInput();
+  }
+
+  function setMemoMaskGroupRevealed(maskKey, reveal) {
+    [...els.memoInput.querySelectorAll("[data-memo-mask]")].forEach(part => {
+      if (part.dataset.memoMask === maskKey) part.classList.toggle("is-revealed", reveal);
+    });
+  }
+
+  function clearMemoMaskPress() {
+    if (!memoMaskPress) return;
+    clearTimeout(memoMaskPress.timer);
+    memoMaskPress = null;
+  }
+
+  function cancelMemoMaskPress() {
+    if (!memoMaskPress) return;
+    const press = memoMaskPress;
+    clearMemoMaskPress();
+    if (press.long) {
+      setMemoMaskGroupRevealed(press.maskKey, press.wasRevealed);
+      press.mask.classList.remove("is-editing");
+    }
+  }
+
+  function placeCaretInMemoMask(mask, x, y) {
+    let range = null;
+    if (document.caretRangeFromPoint) {
+      range = document.caretRangeFromPoint(x, y);
+    } else if (document.caretPositionFromPoint) {
+      const position = document.caretPositionFromPoint(x, y);
+      if (position) {
+        range = document.createRange();
+        range.setStart(position.offsetNode, position.offset);
+        range.collapse(true);
+      }
+    }
+    if (!range || !mask.contains(range.startContainer)) {
+      range = document.createRange();
+      range.selectNodeContents(mask);
+      range.collapse(false);
+    }
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    savedMemoRange = range.cloneRange();
   }
 
   function completeReview() {
@@ -1562,7 +2036,7 @@
 
   function syncPayload() {
     return {
-      version: 2,
+      version: 3,
       updatedAt: new Date().toISOString(),
       sentences,
       reviewHistory: normalizeReviewHistory(reviewHistory),
@@ -1885,6 +2359,11 @@
   els.pushSyncBtn.addEventListener("click", () => cloudSaveNow());
 
   els.reviewStage.addEventListener("click", e => {
+    if (e.target.closest("#reviewMemoBtn")) {
+      const item = currentReviewItem();
+      if (item) openMemoDialog(item.id);
+      return;
+    }
     if (e.target.id === "showAnswerBtn") { showTranslation = true; renderReview(); }
     if (e.target.id === "completeReviewBtn") completeReview();
     if (e.target.id === "skipReviewBtn") skipReview();
@@ -1895,6 +2374,148 @@
   });
   els.reviewStage.addEventListener("submit", e => {
     if (e.target.id === "reviewEditForm") saveReviewEdits(e);
+  });
+
+  els.memoForm.addEventListener("submit", event => {
+    event.preventDefault();
+    closeMemoAfterSave(els.memoInput.innerHTML);
+  });
+  els.memoClearBtn.addEventListener("click", () => closeMemoAfterSave(""));
+  els.memoCloseBtn.addEventListener("click", () => els.memoDialog.close());
+  els.memoCancelBtn.addEventListener("click", () => els.memoDialog.close());
+
+  document.addEventListener("selectionchange", () => {
+    if (!els.memoDialog.open) return;
+    rememberMemoSelection();
+    memoFormatBtns.forEach(button => {
+      let active = false;
+      try { active = document.queryCommandState(button.dataset.command); } catch {}
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  });
+
+  memoToolbar.addEventListener("pointerdown", event => {
+    if (event.target.closest("button")) event.preventDefault();
+  });
+  memoToolbar.addEventListener("mousedown", event => {
+    if (event.target.closest("button")) event.preventDefault();
+  });
+
+  memoFormatBtns.forEach(button => {
+    button.addEventListener("click", () => {
+      restoreMemoSelection();
+      document.execCommand("styleWithCSS", false, false);
+      document.execCommand(button.dataset.command, false);
+      rememberMemoSelection();
+      button.setAttribute("aria-pressed", document.queryCommandState(button.dataset.command) ? "true" : "false");
+    });
+  });
+
+  els.memoFontSelect.addEventListener("change", () => {
+    const font = MEMO_FONT_VALUES[els.memoFontSelect.value];
+    if (!font) return;
+    restoreMemoSelection();
+    document.execCommand("styleWithCSS", false, true);
+    document.execCommand("fontName", false, font);
+    document.execCommand("styleWithCSS", false, false);
+    rememberMemoSelection();
+    els.memoFontSelect.value = "";
+  });
+
+  els.memoMaskBtn.addEventListener("click", toggleSelectedMemoMask);
+
+  els.memoInput.addEventListener("pointerdown", event => {
+    const mask = event.target.closest("[data-memo-mask]");
+    if (!mask || !els.memoInput.contains(mask) || !isTouchFirstDevice()) return;
+    event.preventDefault();
+    els.memoInput.blur();
+    clearMemoMaskPress();
+    const press = {
+      pointerId: event.pointerId,
+      mask,
+      maskKey: mask.dataset.memoMask,
+      startX: event.clientX,
+      startY: event.clientY,
+      x: event.clientX,
+      y: event.clientY,
+      wasRevealed: mask.classList.contains("is-revealed"),
+      long: false,
+      timer: null,
+    };
+    press.timer = setTimeout(() => {
+      press.long = true;
+      setMemoMaskGroupRevealed(press.maskKey, true);
+      mask.classList.add("is-editing");
+    }, 520);
+    memoMaskPress = press;
+  });
+
+  els.memoInput.addEventListener("pointermove", event => {
+    if (!memoMaskPress || event.pointerId !== memoMaskPress.pointerId) return;
+    memoMaskPress.x = event.clientX;
+    memoMaskPress.y = event.clientY;
+    if (Math.hypot(event.clientX - memoMaskPress.startX, event.clientY - memoMaskPress.startY) > 10) cancelMemoMaskPress();
+  });
+
+  els.memoInput.addEventListener("pointerup", event => {
+    if (!memoMaskPress || event.pointerId !== memoMaskPress.pointerId) return;
+    event.preventDefault();
+    const press = memoMaskPress;
+    clearMemoMaskPress();
+    suppressMemoMaskClickUntil = Date.now() + 700;
+    if (!press.long) {
+      setMemoMaskGroupRevealed(press.maskKey, !press.wasRevealed);
+      setTimeout(() => els.memoInput.blur(), 0);
+      return;
+    }
+    press.mask.contentEditable = "true";
+    focusMemoInput();
+    placeCaretInMemoMask(press.mask, press.x, press.y);
+  });
+
+  els.memoInput.addEventListener("pointercancel", cancelMemoMaskPress);
+  els.memoInput.addEventListener("click", event => {
+    const mask = event.target.closest("[data-memo-mask]");
+    if (!mask || !els.memoInput.contains(mask)) return;
+    if (Date.now() < suppressMemoMaskClickUntil) {
+      event.preventDefault();
+      return;
+    }
+    setMemoMaskGroupRevealed(mask.dataset.memoMask, !mask.classList.contains("is-revealed"));
+  });
+  els.memoInput.addEventListener("blur", () => {
+    if (!isTouchFirstDevice()) return;
+    els.memoInput.querySelectorAll("[data-memo-mask]").forEach(mask => {
+      mask.contentEditable = "false";
+      mask.classList.remove("is-editing");
+    });
+  });
+
+  memoColorBtns.forEach(button => {
+    button.addEventListener("click", () => {
+      const color = MEMO_COLOR_VALUES[button.dataset.memoColor];
+      if (!color) return;
+      restoreMemoSelection();
+      document.execCommand("styleWithCSS", false, true);
+      document.execCommand("foreColor", false, color);
+      document.execCommand("styleWithCSS", false, false);
+      rememberMemoSelection();
+    });
+  });
+
+  els.memoDialog.addEventListener("close", () => {
+    const returnScroll = memoReturnScroll;
+    clearTimeout(memoScrollRestoreTimer);
+    memoScrollRestoreTimer = null;
+    memoReturnScroll = null;
+    cancelMemoMaskPress();
+    suppressMemoMaskClickUntil = 0;
+    pendingMemoId = null;
+    savedMemoRange = null;
+    els.memoTarget.textContent = "";
+    els.memoInput.innerHTML = "";
+    memoFormatBtns.forEach(button => button.setAttribute("aria-pressed", "false"));
+    requestAnimationFrame(() => restoreMemoPageScroll(returnScroll));
   });
 
   hydrateSyncSettings();

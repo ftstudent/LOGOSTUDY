@@ -1750,6 +1750,63 @@
     font-family: 'Noto Sans KR', sans-serif;
     font-size: 10px;
   }
+  .memo-symbol-btn{
+    font-family: 'Fraunces', 'Noto Serif KR', serif;
+    font-size: 19px;
+    font-weight: 600;
+  }
+  .memo-toggle-btn{
+    width: auto;
+    min-width: 58px;
+    padding: 0 8px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 10px;
+    letter-spacing: -.02em;
+  }
+  .memo-input details{
+    margin: .8em 0;
+    border: 1px solid var(--line);
+    border-left: 3px solid #2f746b;
+    border-radius: 4px;
+    background: rgba(255,255,255,.44);
+    overflow: clip;
+  }
+  .memo-input summary{
+    min-height: 38px;
+    padding: 7px 10px;
+    background: rgba(191,209,200,.45);
+    color: var(--ink);
+    font-weight: 700;
+    line-height: 1.55;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+  }
+  .memo-input summary::-webkit-details-marker{ display: none; }
+  .memo-input summary::before{
+    content: '▸';
+    flex: 0 0 auto;
+    color: var(--rust);
+    font-family: 'Noto Sans KR', sans-serif;
+    transform-origin: 50% 50%;
+    transition: transform .14s ease;
+  }
+  .memo-input details[open] > summary{
+    border-bottom: 1px solid var(--line);
+  }
+  .memo-input details[open] > summary::before{
+    transform: rotate(90deg);
+  }
+  .memo-input details > div{
+    min-height: 42px;
+    padding: 10px 12px;
+  }
+  .memo-input details details{
+    margin-left: 6px;
+    margin-right: 2px;
+  }
   .memo-input table{
     width: 100%;
     margin: 8px 0;
@@ -1958,6 +2015,8 @@
             <button type="button" class="memo-format-btn" data-command="italic" aria-label="기울임" aria-pressed="false" title="기울임">I</button>
             <button type="button" class="memo-format-btn" data-command="underline" aria-label="밑줄" aria-pressed="false" title="밑줄">U</button>
             <button type="button" class="memo-format-btn memo-table-btn" id="memoTableBtn" aria-label="3×3 표 삽입" title="3×3 표 삽입">표</button>
+            <button type="button" class="memo-format-btn memo-symbol-btn" id="memoMiddleDotBtn" aria-label="가운데점 입력" title="가운데점 입력">·</button>
+            <button type="button" class="memo-format-btn memo-toggle-btn" id="memoToggleBtn" aria-label="선택 영역을 접고 펴는 토글로 묶기" title="선택 영역을 토글로 묶기 · 선택이 없으면 새 토글 만들기">▸ 토글</button>
           </div>
         </div>
         <div class="memo-tool-group memo-color-group">
@@ -1980,7 +2039,7 @@
         </div>
       </div>
       <div id="memoInput" class="memo-input" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="memoInputLabel" data-placeholder="내용을 적거나 외부 표를 그대로 붙여넣으세요."></div>
-      <p class="memo-guide">표 버튼은 편집 가능한 3×3 표를 만듭니다. Excel·Numbers·웹페이지 표를 붙여넣으면 표 구조를 유지합니다. 가려진 영역은 눌러서 열고 닫을 수 있습니다.</p>
+      <p class="memo-guide">접을 내용을 선택한 뒤 토글을 누르면 제목을 붙여 묶을 수 있습니다. 선택 없이 누르면 빈 토글이 생기고, · 버튼은 가운데점을 입력합니다. 외부 표를 붙여넣으면 구조를 유지하며 가려진 영역은 눌러서 열고 닫을 수 있습니다.</p>
     </div>
     <div class="dialog-actions">
       <button type="button" class="toggle-btn memo-clear-btn" id="memoClearBtn">메모 지우기</button>
@@ -2082,6 +2141,8 @@ const memoInput = $('memoInput');
 const memoClearBtn = $('memoClearBtn');
 const memoFontSelect = $('memoFontSelect');
 const memoTableBtn = $('memoTableBtn');
+const memoMiddleDotBtn = $('memoMiddleDotBtn');
+const memoToggleBtn = $('memoToggleBtn');
 const memoFormatBtns = document.querySelectorAll('.memo-format-btn[data-command]');
 const memoMaskBtns = document.querySelectorAll('.memo-mask-btn[data-mask-level]');
 const memoColorBtns = document.querySelectorAll('[data-memo-color]');
@@ -2223,6 +2284,7 @@ function sanitizeMemoHTML(value){
   let remaining = 30000;
   const allowedStructure = new Set([
     'div', 'p', 'blockquote', 'ul', 'ol', 'li',
+    'details', 'summary',
     'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
   ]);
   const dropped = new Set(['script', 'style', 'iframe', 'object', 'embed', 'svg', 'math', 'form', 'input', 'button']);
@@ -2281,6 +2343,7 @@ function sanitizeMemoHTML(value){
     }
     if (allowedStructure.has(tag)) {
       const structural = document.createElement(tag);
+      if (tag === 'details' && node.hasAttribute('open')) structural.setAttribute('open', '');
       if ((tag === 'td' || tag === 'th') && /^\d{1,2}$/.test(node.getAttribute('colspan') || '')) {
         structural.colSpan = Math.min(20, Number(node.getAttribute('colspan')));
       }
@@ -2739,6 +2802,35 @@ function restoreMemoSelection(){
 function insertMemoHTML(html){
   restoreMemoSelection();
   document.execCommand('insertHTML', false, html);
+  rememberMemoSelection();
+}
+
+function insertMemoToggle(){
+  restoreMemoSelection();
+  const selection = window.getSelection();
+  let selectedHTML = '';
+  if (selection.rangeCount) {
+    const range = selection.getRangeAt(0);
+    if (memoInput.contains(range.commonAncestorContainer) && !range.collapsed) {
+      const holder = document.createElement('div');
+      holder.appendChild(range.cloneContents());
+      const cleaned = sanitizeMemoHTML(holder.innerHTML);
+      if (memoHTMLHasContent(cleaned)) selectedHTML = cleaned;
+    }
+  }
+
+  const token = `memo-toggle-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  insertMemoHTML(`<details open data-memo-toggle-draft="${escapeAttr(token)}"><summary>토글 제목</summary><div>${selectedHTML || '<br>'}</div></details><div><br></div>`);
+
+  const toggle = memoInput.querySelector(`[data-memo-toggle-draft="${CSS.escape(token)}"]`);
+  if (!toggle) return;
+  toggle.removeAttribute('data-memo-toggle-draft');
+  const summary = toggle.querySelector(':scope > summary');
+  if (!summary) return;
+  const titleRange = document.createRange();
+  titleRange.selectNodeContents(summary);
+  selection.removeAllRanges();
+  selection.addRange(titleRange);
   rememberMemoSelection();
 }
 
@@ -3211,6 +3303,9 @@ memoTableBtn.addEventListener('click', () => {
   ];
   insertMemoHTML(tableHTMLFromRows(rows));
 });
+
+memoMiddleDotBtn.addEventListener('click', () => insertMemoHTML('·'));
+memoToggleBtn.addEventListener('click', insertMemoToggle);
 
 memoInput.addEventListener('paste', event => {
   const clipboard = event.clipboardData;

@@ -1807,13 +1807,17 @@
   }
   .memo-input details[open] > summary{
     border-bottom: 1px solid var(--line);
+    margin-bottom: 10px;
   }
   .memo-input details[open] > summary > [data-memo-toggle-control]{
     transform: rotate(90deg);
   }
   .memo-input details > div{
-    min-height: 42px;
-    padding: 10px 12px;
+    min-height: 0;
+    padding: 0 12px;
+  }
+  .memo-input details[open]{
+    padding-bottom: 10px;
   }
   .memo-input details details{
     margin-left: 6px;

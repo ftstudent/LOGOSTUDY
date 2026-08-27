@@ -1750,6 +1750,65 @@
     font-family: 'Noto Sans KR', sans-serif;
     font-size: 10px;
   }
+  .memo-table-tools{
+    margin-top: -8px;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-top: 1px dashed var(--brass);
+    border-bottom: 0;
+    background: rgba(239,227,183,.42);
+    display: grid;
+    gap: 8px;
+  }
+  .memo-table-tools[hidden]{ display: none; }
+  .memo-table-tools-head,
+  .memo-table-actions{
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .memo-table-tools-title{
+    margin-right: auto;
+    color: var(--rust);
+    font: 700 10px/1.3 'Noto Sans KR', sans-serif;
+  }
+  .memo-table-status{
+    color: var(--ink-soft);
+    font: 10px/1.3 'IBM Plex Mono', monospace;
+  }
+  .memo-table-size-field{
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--ink-soft);
+    font: 600 10px/1 'Noto Sans KR', sans-serif;
+  }
+  .memo-table-size-input{
+    width: 50px !important;
+    height: 28px;
+    min-height: 28px;
+    padding: 3px 5px !important;
+    border-color: var(--line) !important;
+    background: rgba(255,255,255,.72) !important;
+    font-size: 11px !important;
+  }
+  .memo-table-action{
+    min-height: 28px;
+    padding: 4px 8px;
+    border-color: var(--line);
+    background: rgba(255,255,255,.58);
+    color: var(--ink);
+    font: 600 10px/1.2 'Noto Sans KR', sans-serif;
+  }
+  .memo-table-action:hover{
+    background: var(--card);
+    color: var(--rust);
+  }
+  .memo-table-action-danger{
+    margin-left: auto;
+    color: var(--rust);
+  }
   .memo-symbol-btn{
     font-family: 'Fraunces', 'Noto Serif KR', serif;
     font-size: 19px;
@@ -1925,6 +1984,10 @@
     font: 12.5px/1.55 'Noto Serif KR', serif;
     white-space: normal;
   }
+  .memo-input table.is-memo-table-active{
+    outline: 2px solid rgba(143,63,90,.48);
+    outline-offset: 2px;
+  }
   .memo-input th,
   .memo-input td{
     min-width: 56px;
@@ -1932,12 +1995,27 @@
     border: 1px solid var(--line);
     vertical-align: top;
   }
+  .memo-input th.is-memo-cell-active,
+  .memo-input td.is-memo-cell-active{
+    box-shadow: inset 0 0 0 2px var(--rust);
+  }
   .memo-input th{
     background: #ccddd5;
     color: var(--ink);
     font-weight: 700;
   }
   .memo-input tr:nth-child(even) td{ background: rgba(191,209,200,.26); }
+  @media (max-width: 560px){
+    .memo-table-tools-head{
+      align-items: flex-start;
+    }
+    .memo-table-tools-title{
+      width: 100%;
+    }
+    .memo-table-action-danger{
+      margin-left: 0;
+    }
+  }
   .memo-input [data-memo-mask][data-mask-level="1"]{ background: #8f3f5a; }
   .memo-input [data-memo-mask][data-mask-level="2"]{ background: #2f746b; }
   .memo-input [data-memo-mask][data-mask-level="3"]{ background: #5d608f; }
@@ -2148,8 +2226,26 @@
           </span>
         </div>
       </div>
+      <div class="memo-table-tools" id="memoTableTools" role="toolbar" aria-label="선택한 표 편집" hidden>
+        <div class="memo-table-tools-head">
+          <span class="memo-table-tools-title">선택한 표 편집</span>
+          <span class="memo-table-status" id="memoTableStatus">0행 × 0열</span>
+          <label class="memo-table-size-field">행 <input class="memo-table-size-input" id="memoTableRowsInput" type="number" min="1" max="50" inputmode="numeric" aria-label="표 행 개수"></label>
+          <label class="memo-table-size-field">열 <input class="memo-table-size-input" id="memoTableColumnsInput" type="number" min="1" max="20" inputmode="numeric" aria-label="표 열 개수"></label>
+          <button type="button" class="memo-table-action" data-memo-table-action="resize">개수 적용</button>
+        </div>
+        <div class="memo-table-actions">
+          <button type="button" class="memo-table-action" data-memo-table-action="before">↑ 앞에 줄</button>
+          <button type="button" class="memo-table-action" data-memo-table-action="add-row">행 ＋</button>
+          <button type="button" class="memo-table-action" data-memo-table-action="delete-row">행 －</button>
+          <button type="button" class="memo-table-action" data-memo-table-action="add-column">열 ＋</button>
+          <button type="button" class="memo-table-action" data-memo-table-action="delete-column">열 －</button>
+          <button type="button" class="memo-table-action" data-memo-table-action="after">↓ 뒤에 줄</button>
+          <button type="button" class="memo-table-action memo-table-action-danger" data-memo-table-action="delete-table">표 삭제</button>
+        </div>
+      </div>
       <div id="memoInput" class="memo-input" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="memoInputLabel" data-placeholder="내용을 적거나 외부 표를 그대로 붙여넣으세요."></div>
-      <p class="memo-guide">접을 내용을 선택한 뒤 토글을 누르면 제목을 붙여 묶을 수 있습니다. 토글의 ＋↑·＋↓는 앞뒤에 입력 줄을 만들고 ×는 블록을 삭제합니다. 제목에서 Enter를 누르면 본문으로 이동하며, · 버튼은 가운데점을 입력합니다.</p>
+      <p class="memo-guide">표의 셀을 누르면 행·열 개수와 앞뒤 입력 줄을 조절할 수 있습니다. 토글의 ＋↑·＋↓는 앞뒤에 입력 줄을 만들고 ×는 블록을 삭제합니다. 제목에서 Enter를 누르면 본문으로 이동하며, · 버튼은 가운데점을 입력합니다.</p>
     </div>
     <div class="dialog-actions">
       <button type="button" class="toggle-btn memo-clear-btn" id="memoClearBtn">메모 지우기</button>
@@ -2251,6 +2347,10 @@ const memoInput = $('memoInput');
 const memoClearBtn = $('memoClearBtn');
 const memoFontSelect = $('memoFontSelect');
 const memoTableBtn = $('memoTableBtn');
+const memoTableTools = $('memoTableTools');
+const memoTableStatus = $('memoTableStatus');
+const memoTableRowsInput = $('memoTableRowsInput');
+const memoTableColumnsInput = $('memoTableColumnsInput');
 const memoMiddleDotBtn = $('memoMiddleDotBtn');
 const memoToggleBtn = $('memoToggleBtn');
 const memoFormatBtns = document.querySelectorAll('.memo-format-btn[data-command]');
@@ -2271,6 +2371,8 @@ let editingCardId = null;
 let pendingGroupCardId = null;
 let pendingMemoKey = null;
 let savedMemoRange = null;
+let activeMemoTable = null;
+let activeMemoCell = null;
 let memoReturnScroll = null;
 let memoScrollRestoreTimer = null;
 let memoMaskPress = null;
@@ -3016,6 +3118,7 @@ function openMemoDialog(key){
   memoReturnScroll = openingScroll;
   pendingMemoKey = key;
   memoTarget.textContent = `${cardLabel(card)} · ${card.question}`;
+  clearActiveMemoTable();
   memoInput.innerHTML = noteHTML(key);
   prepareMemoToggles();
   prepareMemoMasks();
@@ -3082,12 +3185,21 @@ function focusMemoEditable(node, { select = false, atEnd = false } = {}){
   restoreMemoPageScroll(scrollPosition);
 }
 
-function insertMemoLineBesideToggle(toggle, position){
+function createMemoBlankLine(){
   const line = document.createElement('div');
   line.appendChild(document.createElement('br'));
-  if (position === 'before') toggle.before(line);
-  else toggle.after(line);
+  return line;
+}
+
+function insertMemoLineBesideNode(node, position){
+  const line = createMemoBlankLine();
+  if (position === 'before') node.before(line);
+  else node.after(line);
   focusMemoEditable(line);
+}
+
+function insertMemoLineBesideToggle(toggle, position){
+  insertMemoLineBesideNode(toggle, position);
 }
 
 function deleteMemoToggle(toggle){
@@ -3141,7 +3253,194 @@ function tableHTMLFromRows(rows){
   return `<table><tbody>${normalized.map((row, rowIndex) => `<tr>${Array.from({ length: width }, (_, columnIndex) => {
     const tag = rowIndex === 0 ? 'th' : 'td';
     return `<${tag}>${escapeHTML(row[columnIndex] || '') || '<br>'}</${tag}>`;
-  }).join('')}</tr>`).join('')}</tbody></table><div><br></div>`;
+  }).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+function memoTableDimensions(table){
+  const rows = table ? [...table.rows] : [];
+  return {
+    rows: rows.length,
+    columns: rows.reduce((maximum, row) => Math.max(maximum, row.cells.length), 0),
+  };
+}
+
+function memoNodeHasContent(node){
+  return Boolean(node?.textContent.replace(/\u00a0/g, ' ').trim() || node?.querySelector('table, [data-memo-toggle], [data-memo-mask]'));
+}
+
+function clearActiveMemoTable(){
+  activeMemoTable?.classList.remove('is-memo-table-active');
+  activeMemoCell?.classList.remove('is-memo-cell-active');
+  activeMemoTable = null;
+  activeMemoCell = null;
+  memoTableTools.hidden = true;
+}
+
+function updateMemoTableTools(){
+  if (!activeMemoTable?.isConnected || !memoInput.contains(activeMemoTable)) {
+    clearActiveMemoTable();
+    return;
+  }
+  const dimensions = memoTableDimensions(activeMemoTable);
+  const row = activeMemoCell?.parentElement;
+  const position = row && activeMemoCell
+    ? ` · ${row.rowIndex + 1}행 ${activeMemoCell.cellIndex + 1}열 선택`
+    : '';
+  memoTableStatus.textContent = `${dimensions.rows}행 × ${dimensions.columns}열${position}`;
+  memoTableRowsInput.value = dimensions.rows;
+  memoTableColumnsInput.value = dimensions.columns;
+  memoTableTools.hidden = false;
+}
+
+function setActiveMemoTable(table, cell = null){
+  activeMemoTable?.classList.remove('is-memo-table-active');
+  activeMemoCell?.classList.remove('is-memo-cell-active');
+  if (!table || !memoInput.contains(table)) {
+    clearActiveMemoTable();
+    return;
+  }
+  activeMemoTable = table;
+  activeMemoCell = cell?.closest?.('th, td') || table.querySelector('th, td');
+  if (activeMemoCell?.closest('table') !== table) activeMemoCell = table.querySelector(':scope > thead th, :scope > tbody th, :scope > tbody td, :scope > tr th, :scope > tr td');
+  table.classList.add('is-memo-table-active');
+  activeMemoCell?.classList.add('is-memo-cell-active');
+  updateMemoTableTools();
+}
+
+function focusMemoTableCell(cell){
+  if (!cell) return;
+  setActiveMemoTable(cell.closest('table'), cell);
+  focusMemoEditable(cell, { atEnd: true });
+}
+
+function memoTableCellTag(row){
+  const cells = [...row.cells];
+  return row.parentElement?.tagName === 'THEAD' || (cells.length && cells.every(cell => cell.tagName === 'TH')) ? 'th' : 'td';
+}
+
+function insertMemoTableCell(row, index, tagName = memoTableCellTag(row)){
+  const cell = document.createElement(tagName);
+  cell.appendChild(document.createElement('br'));
+  row.insertBefore(cell, row.cells[index] || null);
+  return cell;
+}
+
+function addMemoTableRow(){
+  if (!activeMemoTable) return;
+  const rows = [...activeMemoTable.rows];
+  const reference = activeMemoCell?.parentElement || rows[rows.length - 1];
+  const columns = Math.max(memoTableDimensions(activeMemoTable).columns, 1);
+  const row = document.createElement('tr');
+  if (reference) reference.after(row);
+  else (activeMemoTable.tBodies[0] || activeMemoTable.createTBody()).appendChild(row);
+  const tagName = reference ? memoTableCellTag(reference) : 'td';
+  for (let index = 0; index < columns; index += 1) insertMemoTableCell(row, index, tagName);
+  focusMemoTableCell(row.cells[0]);
+}
+
+function deleteMemoTableRow(){
+  if (!activeMemoTable) return;
+  const rows = [...activeMemoTable.rows];
+  if (rows.length <= 1) {
+    alert('표에는 최소 한 개의 행이 필요합니다. 표 전체를 없애려면 ‘표 삭제’를 사용하세요.');
+    return;
+  }
+  const row = activeMemoCell?.parentElement || rows[rows.length - 1];
+  if (memoNodeHasContent(row) && !window.confirm('선택한 행과 안의 내용을 삭제할까요?')) return;
+  const rowIndex = row.rowIndex;
+  const columnIndex = activeMemoCell?.cellIndex || 0;
+  row.remove();
+  const nextRow = activeMemoTable.rows[Math.min(rowIndex, activeMemoTable.rows.length - 1)];
+  focusMemoTableCell(nextRow?.cells[Math.min(columnIndex, nextRow.cells.length - 1)]);
+}
+
+function addMemoTableColumn(){
+  if (!activeMemoTable) return;
+  const columnIndex = activeMemoCell ? activeMemoCell.cellIndex + 1 : memoTableDimensions(activeMemoTable).columns;
+  let selectedCell = null;
+  [...activeMemoTable.rows].forEach(row => {
+    const cell = insertMemoTableCell(row, Math.min(columnIndex, row.cells.length));
+    if (row === activeMemoCell?.parentElement) selectedCell = cell;
+  });
+  focusMemoTableCell(selectedCell || activeMemoTable.rows[0]?.cells[Math.min(columnIndex, activeMemoTable.rows[0].cells.length - 1)]);
+}
+
+function deleteMemoTableColumn(){
+  if (!activeMemoTable) return;
+  const dimensions = memoTableDimensions(activeMemoTable);
+  if (dimensions.columns <= 1) {
+    alert('표에는 최소 한 개의 열이 필요합니다. 표 전체를 없애려면 ‘표 삭제’를 사용하세요.');
+    return;
+  }
+  const columnIndex = activeMemoCell?.cellIndex ?? dimensions.columns - 1;
+  const cells = [...activeMemoTable.rows]
+    .map(row => row.cells[Math.min(columnIndex, row.cells.length - 1)])
+    .filter((cell, index, list) => cell && cell.parentElement.cells.length > 1 && list.indexOf(cell) === index);
+  if (cells.some(memoNodeHasContent) && !window.confirm('선택한 열과 안의 내용을 삭제할까요?')) return;
+  const activeRowIndex = activeMemoCell?.parentElement?.rowIndex || 0;
+  cells.forEach(cell => cell.remove());
+  const row = activeMemoTable.rows[Math.min(activeRowIndex, activeMemoTable.rows.length - 1)];
+  focusMemoTableCell(row?.cells[Math.min(columnIndex, row.cells.length - 1)]);
+}
+
+function resizeMemoTable(){
+  if (!activeMemoTable) return;
+  const targetRows = Math.max(1, Math.min(50, Math.trunc(memoTableRowsInput.valueAsNumber || 1)));
+  const targetColumns = Math.max(1, Math.min(20, Math.trunc(memoTableColumnsInput.valueAsNumber || 1)));
+  const activeRowIndex = Math.max(0, activeMemoCell?.parentElement?.rowIndex ?? 0);
+  const activeColumnIndex = Math.max(0, activeMemoCell?.cellIndex ?? 0);
+  const rows = [...activeMemoTable.rows];
+  const removedNodes = [
+    ...rows.slice(targetRows),
+    ...rows.slice(0, targetRows).flatMap(row => [...row.cells].slice(targetColumns)),
+  ];
+  if (removedNodes.some(memoNodeHasContent) && !window.confirm('줄어드는 행·열 안의 내용도 함께 삭제됩니다. 계속할까요?')) {
+    updateMemoTableTools();
+    return;
+  }
+
+  while (activeMemoTable.rows.length > targetRows) activeMemoTable.deleteRow(-1);
+  const body = activeMemoTable.tBodies[0] || activeMemoTable.createTBody();
+  while (activeMemoTable.rows.length < targetRows) body.appendChild(document.createElement('tr'));
+  [...activeMemoTable.rows].forEach(row => {
+    while (row.cells.length > targetColumns) row.deleteCell(-1);
+    while (row.cells.length < targetColumns) insertMemoTableCell(row, row.cells.length);
+  });
+  const nextRow = activeMemoTable.rows[Math.min(activeRowIndex, targetRows - 1)];
+  focusMemoTableCell(nextRow?.cells[Math.min(activeColumnIndex, targetColumns - 1)]);
+}
+
+function deleteActiveMemoTable(){
+  if (!activeMemoTable) return;
+  const table = activeMemoTable;
+  if (memoNodeHasContent(table) && !window.confirm('이 표와 안의 내용을 모두 삭제할까요?')) return;
+  const line = createMemoBlankLine();
+  clearActiveMemoTable();
+  table.replaceWith(line);
+  focusMemoEditable(line);
+}
+
+function handleMemoTableAction(action){
+  if (!activeMemoTable) return;
+  if (action === 'before' || action === 'after') {
+    const table = activeMemoTable;
+    clearActiveMemoTable();
+    insertMemoLineBesideNode(table, action);
+  } else if (action === 'add-row') addMemoTableRow();
+  else if (action === 'delete-row') deleteMemoTableRow();
+  else if (action === 'add-column') addMemoTableColumn();
+  else if (action === 'delete-column') deleteMemoTableColumn();
+  else if (action === 'resize') resizeMemoTable();
+  else if (action === 'delete-table') deleteActiveMemoTable();
+}
+
+function insertMemoTableHTML(html){
+  const existingTables = new Set(memoInput.querySelectorAll('table'));
+  insertMemoHTML(`<div><br></div>${html}<div><br></div>`);
+  const table = [...memoInput.querySelectorAll('table')].find(candidate => !existingTables.has(candidate));
+  const cell = table?.querySelector('th, td');
+  if (table) setActiveMemoTable(table, cell);
+  if (cell) focusMemoTableCell(cell);
 }
 
 function unwrapMemoMaskGroups(groups){
@@ -3546,6 +3845,13 @@ memoClearBtn.addEventListener('click', () => closeMemoAfterSave(''));
 document.addEventListener('selectionchange', () => {
   if (!memoDialog.open) return;
   rememberMemoSelection();
+  const selection = window.getSelection();
+  if (selection.rangeCount && memoInput.contains(selection.anchorNode)) {
+    const anchor = selection.anchorNode.nodeType === Node.ELEMENT_NODE ? selection.anchorNode : selection.anchorNode.parentElement;
+    const cell = anchor?.closest?.('th, td');
+    if (cell && cell.closest('table') && memoInput.contains(cell)) setActiveMemoTable(cell.closest('table'), cell);
+    else clearActiveMemoTable();
+  }
   memoFormatBtns.forEach(button => {
     let active = false;
     try { active = document.queryCommandState(button.dataset.command); } catch {}
@@ -3558,6 +3864,25 @@ memoToolbar.addEventListener('pointerdown', event => {
 });
 memoToolbar.addEventListener('mousedown', event => {
   if (event.target.closest('button')) event.preventDefault();
+});
+
+memoTableTools.addEventListener('pointerdown', event => {
+  if (event.target.closest('button')) event.preventDefault();
+});
+memoTableTools.addEventListener('mousedown', event => {
+  if (event.target.closest('button')) event.preventDefault();
+});
+memoTableTools.addEventListener('click', event => {
+  const button = event.target.closest('[data-memo-table-action]');
+  if (!button) return;
+  handleMemoTableAction(button.dataset.memoTableAction);
+});
+[memoTableRowsInput, memoTableColumnsInput].forEach(input => {
+  input.addEventListener('keydown', event => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    resizeMemoTable();
+  });
 });
 
 memoFormatBtns.forEach(button => {
@@ -3601,7 +3926,7 @@ memoTableBtn.addEventListener('click', () => {
     ['', '', ''],
     ['', '', ''],
   ];
-  insertMemoHTML(tableHTMLFromRows(rows));
+  insertMemoTableHTML(tableHTMLFromRows(rows));
 });
 
 memoMiddleDotBtn.addEventListener('click', () => insertMemoHTML('·'));
@@ -3614,13 +3939,13 @@ memoInput.addEventListener('paste', event => {
   const text = clipboard.getData('text/plain');
   if (html && /<table[\s>]/i.test(html)) {
     event.preventDefault();
-    insertMemoHTML(sanitizeMemoHTML(html));
+    insertMemoTableHTML(sanitizeMemoHTML(html));
     return;
   }
   if (text.includes('\t') && /\r?\n/.test(text)) {
     event.preventDefault();
     const rows = text.replace(/\r/g, '').split('\n').filter((row, index, list) => row || index < list.length - 1).map(row => row.split('\t'));
-    insertMemoHTML(tableHTMLFromRows(rows));
+    insertMemoTableHTML(tableHTMLFromRows(rows));
   }
 });
 
@@ -3686,6 +4011,11 @@ memoInput.addEventListener('keydown', event => {
 });
 
 memoInput.addEventListener('click', event => {
+  const tableCell = event.target.closest('th, td');
+  const clickedTable = tableCell?.closest('table');
+  if (clickedTable && memoInput.contains(clickedTable)) setActiveMemoTable(clickedTable, tableCell);
+  else clearActiveMemoTable();
+
   const actionButton = event.target.closest('[data-memo-toggle-action]');
   if (actionButton) {
     event.preventDefault();
@@ -3734,6 +4064,7 @@ memoDialog.addEventListener('close', () => {
   suppressMemoMaskClickUntil = 0;
   pendingMemoKey = null;
   savedMemoRange = null;
+  clearActiveMemoTable();
   memoTarget.textContent = '';
   memoInput.innerHTML = '';
   requestAnimationFrame(() => restoreMemoPageScroll(returnScroll));

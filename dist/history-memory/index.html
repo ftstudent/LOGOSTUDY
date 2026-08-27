@@ -1823,6 +1823,100 @@
     margin-left: 6px;
     margin-right: 2px;
   }
+  .memo-input [data-memo-toggle]{
+    margin: .8em 0;
+    border: 1px solid var(--line);
+    border-left: 3px solid #2f746b;
+    border-radius: 4px;
+    background: rgba(255,255,255,.44);
+    overflow: hidden;
+  }
+  .memo-input [data-memo-toggle-header]{
+    min-height: 40px;
+    padding: 6px 8px;
+    background: rgba(191,209,200,.45);
+    color: var(--ink);
+    line-height: 1.55;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .memo-input [data-memo-toggle]:not([data-memo-toggle-collapsed="true"]) > [data-memo-toggle-header]{
+    border-bottom: 1px solid var(--line);
+  }
+  .memo-input [data-memo-toggle-title]{
+    min-width: 0;
+    flex: 1 1 auto;
+    padding: 2px 3px;
+    border-radius: 3px;
+    font-weight: 700;
+    cursor: text;
+    outline: none;
+  }
+  .memo-input [data-memo-toggle-title]:focus{
+    background: rgba(255,255,255,.58);
+    box-shadow: inset 0 -1px 0 var(--rust-dim);
+  }
+  .memo-input [data-memo-toggle-actions]{
+    flex: 0 0 auto;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .memo-input [data-memo-toggle-action]{
+    width: 27px;
+    height: 27px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: var(--ink-soft);
+    font: 600 10px/1 'Noto Sans KR', sans-serif;
+    cursor: pointer;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .memo-input [data-memo-toggle-action]:hover{
+    border-color: var(--line);
+    background: rgba(255,255,255,.62);
+    color: var(--rust);
+  }
+  .memo-input [data-memo-toggle-action="delete"]:hover{
+    border-color: var(--rust-dim);
+    background: #efd6df;
+  }
+  .memo-input [data-memo-toggle-body]{
+    min-height: 42px;
+    padding: 10px 12px;
+    line-height: inherit;
+    outline: none;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .memo-input [data-memo-toggle-body]:focus{
+    background: rgba(255,255,255,.24);
+  }
+  .memo-input [data-memo-toggle][data-memo-toggle-collapsed="true"] > [data-memo-toggle-body]{
+    display: none;
+  }
+  .memo-input [data-memo-toggle]:not([data-memo-toggle-collapsed="true"]) > [data-memo-toggle-header] > [data-memo-toggle-control]{
+    transform: rotate(90deg);
+  }
+  .memo-input [data-memo-toggle] [data-memo-toggle]{
+    margin-left: 6px;
+    margin-right: 2px;
+  }
+  @media (max-width: 480px){
+    .memo-input [data-memo-toggle-header]{
+      flex-wrap: wrap;
+    }
+    .memo-input [data-memo-toggle-actions]{
+      width: 100%;
+      padding-left: 31px;
+      margin-left: 0;
+    }
+  }
   .memo-input table{
     width: 100%;
     margin: 8px 0;
@@ -2055,7 +2149,7 @@
         </div>
       </div>
       <div id="memoInput" class="memo-input" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="memoInputLabel" data-placeholder="내용을 적거나 외부 표를 그대로 붙여넣으세요."></div>
-      <p class="memo-guide">접을 내용을 선택한 뒤 토글을 누르면 제목을 붙여 묶을 수 있습니다. 선택 없이 누르면 빈 토글이 생기고, · 버튼은 가운데점을 입력합니다. 외부 표를 붙여넣으면 구조를 유지하며 가려진 영역은 눌러서 열고 닫을 수 있습니다.</p>
+      <p class="memo-guide">접을 내용을 선택한 뒤 토글을 누르면 제목을 붙여 묶을 수 있습니다. 토글의 ＋↑·＋↓는 앞뒤에 입력 줄을 만들고 ×는 블록을 삭제합니다. 제목에서 Enter를 누르면 본문으로 이동하며, · 버튼은 가운데점을 입력합니다.</p>
     </div>
     <div class="dialog-actions">
       <button type="button" class="toggle-btn memo-clear-btn" id="memoClearBtn">메모 지우기</button>
@@ -2318,14 +2412,12 @@ function sanitizeMemoHTML(value){
     if (dropped.has(tag)) return document.createDocumentFragment();
     if (tag === 'br') return document.createElement('br');
     if (tag === 'hr') return document.createElement('hr');
-    if (tag === 'span' && node.hasAttribute('data-memo-toggle-control')) {
-      const control = document.createElement('span');
-      control.dataset.memoToggleControl = '';
-      control.contentEditable = 'false';
-      control.setAttribute('role', 'button');
-      control.setAttribute('aria-label', '토글 접기 또는 펼치기');
-      control.textContent = '▸';
-      return control;
+    if (tag === 'span' && (
+      node.hasAttribute('data-memo-toggle-control')
+      || node.hasAttribute('data-memo-toggle-actions')
+      || node.hasAttribute('data-memo-toggle-action')
+    )) {
+      return document.createDocumentFragment();
     }
 
     const style = node.style;
@@ -2366,9 +2458,23 @@ function sanitizeMemoHTML(value){
       clean.dataset.memoMask = maskKey;
       clean.dataset.maskLevel = maskLevel;
     }
+    if (tag === 'span' && node.hasAttribute('data-memo-toggle-title')) {
+      const title = document.createElement('span');
+      title.dataset.memoToggleTitle = '';
+      title.appendChild(clean);
+      clean = title;
+    }
     if (allowedStructure.has(tag)) {
       const structural = document.createElement(tag);
       if (tag === 'details' && node.hasAttribute('open')) structural.setAttribute('open', '');
+      if (tag === 'div' && node.hasAttribute('data-memo-toggle')) {
+        structural.dataset.memoToggle = '';
+        if (node.dataset.memoToggleCollapsed === 'true') structural.dataset.memoToggleCollapsed = 'true';
+      } else if (tag === 'div' && node.hasAttribute('data-memo-toggle-header')) {
+        structural.dataset.memoToggleHeader = '';
+      } else if (tag === 'div' && node.hasAttribute('data-memo-toggle-body')) {
+        structural.dataset.memoToggleBody = '';
+      }
       if ((tag === 'td' || tag === 'th') && /^\d{1,2}$/.test(node.getAttribute('colspan') || '')) {
         structural.colSpan = Math.min(20, Number(node.getAttribute('colspan')));
       }
@@ -2779,19 +2885,128 @@ function createMemoToggleControl(){
   control.contentEditable = 'false';
   control.setAttribute('role', 'button');
   control.setAttribute('aria-label', '토글 접기 또는 펼치기');
+  control.title = '접기 또는 펼치기';
   control.textContent = '▸';
   return control;
 }
 
-function prepareMemoToggles(){
-  memoInput.querySelectorAll('details > summary').forEach(summary => {
-    const directControl = [...summary.children].find(child => child.hasAttribute('data-memo-toggle-control'));
-    if (directControl) {
-      directControl.contentEditable = 'false';
-      return;
+function createMemoToggleAction(action, label, text){
+  const button = document.createElement('span');
+  button.dataset.memoToggleAction = action;
+  button.contentEditable = 'false';
+  button.setAttribute('role', 'button');
+  button.setAttribute('aria-label', label);
+  button.title = label;
+  button.textContent = text;
+  return button;
+}
+
+function createMemoToggleActions(){
+  const actions = document.createElement('span');
+  actions.dataset.memoToggleActions = '';
+  actions.contentEditable = 'false';
+  actions.append(
+    createMemoToggleAction('before', '토글 앞에 입력 줄 추가', '＋↑'),
+    createMemoToggleAction('after', '토글 뒤에 입력 줄 추가', '＋↓'),
+    createMemoToggleAction('delete', '토글 블록 삭제', '×'),
+  );
+  return actions;
+}
+
+function directMemoToggleChild(toggle, attribute){
+  return [...toggle.children].find(child => child.hasAttribute(attribute)) || null;
+}
+
+function setMemoToggleCollapsed(toggle, collapsed){
+  if (collapsed) toggle.dataset.memoToggleCollapsed = 'true';
+  else delete toggle.dataset.memoToggleCollapsed;
+  const control = directMemoToggleChild(toggle, 'data-memo-toggle-header')?.querySelector(':scope > [data-memo-toggle-control]');
+  if (control) control.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+}
+
+function normalizeMemoToggle(toggle){
+  toggle.contentEditable = 'false';
+
+  let header = directMemoToggleChild(toggle, 'data-memo-toggle-header');
+  if (!header) {
+    header = document.createElement('div');
+    header.dataset.memoToggleHeader = '';
+    toggle.prepend(header);
+  }
+  header.contentEditable = 'false';
+
+  let title = [...header.children].find(child => child.hasAttribute('data-memo-toggle-title'));
+  if (!title) {
+    title = document.createElement('span');
+    title.dataset.memoToggleTitle = '';
+    [...header.childNodes].forEach(node => {
+      if (node.nodeType === Node.ELEMENT_NODE && (
+        node.hasAttribute('data-memo-toggle-control') || node.hasAttribute('data-memo-toggle-actions')
+      )) return;
+      title.appendChild(node);
+    });
+    header.appendChild(title);
+  }
+  if (!title.textContent.trim() && !title.querySelector('br')) title.textContent = '토글 제목';
+  title.contentEditable = 'true';
+
+  header.querySelectorAll(':scope > [data-memo-toggle-control], :scope > [data-memo-toggle-actions]').forEach(node => node.remove());
+  header.prepend(createMemoToggleControl());
+  header.append(createMemoToggleActions());
+
+  let body = directMemoToggleChild(toggle, 'data-memo-toggle-body');
+  if (!body) {
+    body = document.createElement('div');
+    body.dataset.memoToggleBody = '';
+    body.appendChild(document.createElement('br'));
+    toggle.appendChild(body);
+  }
+  body.contentEditable = 'true';
+  setMemoToggleCollapsed(toggle, toggle.dataset.memoToggleCollapsed === 'true');
+}
+
+function upgradeLegacyMemoToggles(){
+  [...memoInput.querySelectorAll('details')].reverse().forEach(details => {
+    const summary = [...details.children].find(child => child.tagName === 'SUMMARY');
+    const toggle = document.createElement('div');
+    toggle.dataset.memoToggle = '';
+    if (!details.hasAttribute('open')) toggle.dataset.memoToggleCollapsed = 'true';
+
+    const header = document.createElement('div');
+    header.dataset.memoToggleHeader = '';
+    const title = document.createElement('span');
+    title.dataset.memoToggleTitle = '';
+    if (summary) {
+      const savedTitle = [...summary.children].find(child => child.hasAttribute('data-memo-toggle-title'));
+      const titleNodes = savedTitle
+        ? [...savedTitle.childNodes]
+        : [...summary.childNodes].filter(node => !(node.nodeType === Node.ELEMENT_NODE && (
+            node.hasAttribute('data-memo-toggle-control') || node.hasAttribute('data-memo-toggle-actions')
+          )));
+      titleNodes.forEach(node => title.appendChild(node));
     }
-    summary.prepend(createMemoToggleControl());
+    if (!title.textContent.trim()) title.textContent = '토글 제목';
+    header.appendChild(title);
+
+    const body = document.createElement('div');
+    body.dataset.memoToggleBody = '';
+    const contentNodes = [...details.childNodes].filter(node => node !== summary && !(node.nodeType === Node.TEXT_NODE && !node.textContent.trim()));
+    if (contentNodes.length === 1 && contentNodes[0].nodeType === Node.ELEMENT_NODE
+        && contentNodes[0].tagName === 'DIV' && !contentNodes[0].hasAttribute('data-memo-toggle')) {
+      [...contentNodes[0].childNodes].forEach(node => body.appendChild(node));
+    } else {
+      contentNodes.forEach(node => body.appendChild(node));
+    }
+    if (!body.hasChildNodes()) body.appendChild(document.createElement('br'));
+
+    toggle.append(header, body);
+    details.replaceWith(toggle);
   });
+}
+
+function prepareMemoToggles(){
+  upgradeLegacyMemoToggles();
+  memoInput.querySelectorAll('[data-memo-toggle]').forEach(normalizeMemoToggle);
 }
 
 function openMemoDialog(key){
@@ -2852,6 +3067,47 @@ function insertMemoHTML(html){
   rememberMemoSelection();
 }
 
+function focusMemoEditable(node, { select = false, atEnd = false } = {}){
+  if (!node) return;
+  const scrollPosition = { x: window.scrollX, y: window.scrollY };
+  const editHost = node.getAttribute?.('contenteditable') === 'true' ? node : memoInput;
+  try { editHost.focus({ preventScroll: true }); } catch { editHost.focus(); }
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  if (!select) range.collapse(!atEnd);
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  savedMemoRange = range.cloneRange();
+  restoreMemoPageScroll(scrollPosition);
+}
+
+function insertMemoLineBesideToggle(toggle, position){
+  const line = document.createElement('div');
+  line.appendChild(document.createElement('br'));
+  if (position === 'before') toggle.before(line);
+  else toggle.after(line);
+  focusMemoEditable(line);
+}
+
+function deleteMemoToggle(toggle){
+  const body = directMemoToggleChild(toggle, 'data-memo-toggle-body');
+  const hasContent = Boolean(body?.textContent.replace(/\u00a0/g, ' ').trim() || body?.querySelector('table, [data-memo-toggle], [data-memo-mask]'));
+  if (hasContent && !window.confirm('이 토글과 안의 내용을 모두 삭제할까요?')) return;
+  const line = document.createElement('div');
+  line.appendChild(document.createElement('br'));
+  toggle.replaceWith(line);
+  focusMemoEditable(line);
+}
+
+function handleMemoToggleAction(toggle, action){
+  if (action === 'before' || action === 'after') {
+    insertMemoLineBesideToggle(toggle, action);
+    return;
+  }
+  if (action === 'delete') deleteMemoToggle(toggle);
+}
+
 function insertMemoToggle(){
   restoreMemoSelection();
   const selection = window.getSelection();
@@ -2867,19 +3123,15 @@ function insertMemoToggle(){
   }
 
   const token = `memo-toggle-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  insertMemoHTML(`<details open data-memo-toggle-draft="${escapeAttr(token)}"><summary><span data-memo-toggle-control contenteditable="false" role="button" aria-label="토글 접기 또는 펼치기">▸</span><span data-memo-toggle-title>토글 제목</span></summary><div>${selectedHTML || '<br>'}</div></details><div><br></div>`);
+  insertMemoHTML(`<div data-memo-toggle data-memo-toggle-draft="${escapeAttr(token)}" contenteditable="false"><div data-memo-toggle-header contenteditable="false"><span data-memo-toggle-title contenteditable="true">토글 제목</span></div><div data-memo-toggle-body contenteditable="true">${selectedHTML || '<br>'}</div></div><div><br></div>`);
 
   const toggle = memoInput.querySelector(`[data-memo-toggle-draft="${CSS.escape(token)}"]`);
   if (!toggle) return;
   toggle.removeAttribute('data-memo-toggle-draft');
-  const summary = toggle.querySelector(':scope > summary');
-  if (!summary) return;
-  const title = summary.querySelector('[data-memo-toggle-title]');
-  const titleRange = document.createRange();
-  titleRange.selectNodeContents(title || summary);
-  selection.removeAllRanges();
-  selection.addRange(titleRange);
-  rememberMemoSelection();
+  prepareMemoToggles();
+  const header = directMemoToggleChild(toggle, 'data-memo-toggle-header');
+  const title = header?.querySelector(':scope > [data-memo-toggle-title]');
+  focusMemoEditable(title, { select: true });
 }
 
 function tableHTMLFromRows(rows){
@@ -3423,7 +3675,35 @@ memoInput.addEventListener('pointerup', event => {
 
 memoInput.addEventListener('pointercancel', cancelMemoMaskPress);
 
+memoInput.addEventListener('keydown', event => {
+  const title = event.target.closest('[data-memo-toggle-title]');
+  if (!title || event.key !== 'Enter') return;
+  event.preventDefault();
+  const toggle = title.closest('[data-memo-toggle]');
+  if (!toggle) return;
+  setMemoToggleCollapsed(toggle, false);
+  focusMemoEditable(directMemoToggleChild(toggle, 'data-memo-toggle-body'));
+});
+
 memoInput.addEventListener('click', event => {
+  const actionButton = event.target.closest('[data-memo-toggle-action]');
+  if (actionButton) {
+    event.preventDefault();
+    const toggle = actionButton.closest('[data-memo-toggle]');
+    if (toggle) handleMemoToggleAction(toggle, actionButton.dataset.memoToggleAction);
+    return;
+  }
+
+  const toggleControl = event.target.closest('[data-memo-toggle-control]');
+  if (toggleControl) {
+    const toggle = toggleControl.closest('[data-memo-toggle]');
+    if (toggle) {
+      event.preventDefault();
+      setMemoToggleCollapsed(toggle, toggle.dataset.memoToggleCollapsed !== 'true');
+      return;
+    }
+  }
+
   const summary = event.target.closest('summary');
   if (summary && memoInput.contains(summary) && !event.target.closest('[data-memo-toggle-control]')) {
     event.preventDefault();

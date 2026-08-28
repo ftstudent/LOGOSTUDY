@@ -1753,18 +1753,18 @@
   .memo-context-tools{
     grid-column: 1 / -1;
     min-width: 0;
-    min-height: 67px;
+    height: 66px;
+    min-height: 66px;
     padding-top: 8px;
     border-top: 1px solid var(--line);
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 0fr);
     gap: 0;
     overflow: hidden;
-    transition: grid-template-columns .18s ease, gap .18s ease;
   }
   .memo-context-tools.has-active-table{
-    grid-template-columns: minmax(190px, .37fr) minmax(0, 1fr);
-    gap: 9px;
+    grid-template-columns: minmax(250px, .27fr) minmax(0, 1fr);
+    gap: 12px;
   }
   .memo-context-tools .memo-mask-group{
     grid-column: auto;
@@ -1775,6 +1775,7 @@
   .memo-context-tools.has-active-table .memo-mask-btn{
     padding-inline: 4px;
     font-size: 9px;
+    white-space: nowrap;
   }
   .memo-context-tools.has-active-table .memo-mask-btn::before{
     width: 7px;
@@ -1786,30 +1787,39 @@
     padding-left: 9px;
     border-left: 1px dashed var(--brass);
     display: grid;
-    align-content: start;
-    gap: 5px;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    align-self: end;
+    gap: 14px;
     overflow-x: auto;
     overflow-y: hidden;
+    scrollbar-width: none;
     opacity: 1;
     visibility: visible;
     transition: opacity .12s ease;
   }
+  .memo-table-tools::-webkit-scrollbar{ display: none; }
   .memo-table-tools.is-inactive{
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
   }
-  .memo-table-tools-head,
-  .memo-table-actions{
+  .memo-table-tools-head{
     display: flex;
     align-items: center;
     flex-wrap: nowrap;
     gap: 4px;
     width: max-content;
-    min-width: 100%;
+  }
+  .memo-table-actions{
+    min-width: 390px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 7px;
   }
   .memo-table-status{
-    min-width: 108px;
+    min-width: 88px;
     color: var(--ink-soft);
     font: 9px/1.3 'IBM Plex Mono', monospace;
     white-space: nowrap;
@@ -1822,7 +1832,7 @@
     font: 600 10px/1 'Noto Sans KR', sans-serif;
   }
   .memo-table-size-input{
-    width: 42px !important;
+    width: 38px !important;
     height: 25px;
     min-height: 25px;
     padding: 3px 5px !important;
@@ -1843,7 +1853,7 @@
     color: var(--rust);
   }
   .memo-table-action-danger{
-    margin-left: auto;
+    margin-left: 12px;
     color: var(--rust);
   }
   .memo-table-action:disabled,
@@ -2070,7 +2080,7 @@
       font: 700 9px/1 'Noto Sans KR', sans-serif;
     }
     .memo-table-action-danger{
-      margin-left: 0;
+      margin-left: 8px;
     }
   }
   .memo-input [data-memo-mask][data-mask-level="1"]{ background: #8f3f5a; }
@@ -2278,9 +2288,9 @@
           <div class="memo-tool-group memo-mask-group">
             <span class="memo-tool-label">선택한 내용을 개념 위계별로 가리기</span>
             <span class="memo-mask-tools" aria-label="위계별 가리기">
-              <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="1" aria-label="선택 영역 1단계 가리기" title="1단계 개념 가리기">가림 1 · 핵심</button>
-              <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="2" aria-label="선택 영역 2단계 가리기" title="2단계 개념 가리기">가림 2 · 하위</button>
-              <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="3" aria-label="선택 영역 3단계 가리기" title="3단계 개념 가리기">가림 3 · 세부</button>
+              <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="1" aria-label="선택 영역 1단계 가리기" title="1단계 개념 가리기">1 · 핵심</button>
+              <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="2" aria-label="선택 영역 2단계 가리기" title="2단계 개념 가리기">2 · 하위</button>
+              <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="3" aria-label="선택 영역 3단계 가리기" title="3단계 개념 가리기">3 · 세부</button>
             </span>
           </div>
           <div class="memo-table-tools is-inactive" id="memoTableTools" role="toolbar" aria-label="선택한 표 편집" aria-disabled="true">
@@ -3352,9 +3362,9 @@ function updateMemoTableTools(){
   const dimensions = memoTableDimensions(activeMemoTable);
   const row = activeMemoCell?.parentElement;
   const position = row && activeMemoCell
-    ? ` · ${row.rowIndex + 1}행 ${activeMemoCell.cellIndex + 1}열 선택`
+    ? ` · ${row.rowIndex + 1}행 ${activeMemoCell.cellIndex + 1}열`
     : '';
-  memoTableStatus.textContent = `${dimensions.rows}행 × ${dimensions.columns}열${position}`;
+  memoTableStatus.textContent = `${dimensions.rows}×${dimensions.columns}${position}`;
   memoTableRowsInput.value = dimensions.rows;
   memoTableColumnsInput.value = dimensions.columns;
   memoTableRowsInput.disabled = false;

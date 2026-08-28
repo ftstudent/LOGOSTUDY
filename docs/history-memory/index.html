@@ -1750,32 +1750,69 @@
     font-family: 'Noto Sans KR', sans-serif;
     font-size: 10px;
   }
-  .memo-table-tools{
-    margin-top: -8px;
-    padding: 9px 10px;
-    border: 1px solid var(--line);
-    border-top: 1px dashed var(--brass);
-    border-bottom: 0;
-    background: rgba(239,227,183,.42);
+  .memo-context-tools{
+    grid-column: 1 / -1;
+    min-width: 0;
+    min-height: 67px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
     display: grid;
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0fr);
+    gap: 0;
+    overflow: hidden;
+    transition: grid-template-columns .18s ease, gap .18s ease;
   }
-  .memo-table-tools[hidden]{ display: none; }
+  .memo-context-tools.has-active-table{
+    grid-template-columns: minmax(190px, .37fr) minmax(0, 1fr);
+    gap: 9px;
+  }
+  .memo-context-tools .memo-mask-group{
+    grid-column: auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+  .memo-context-tools.has-active-table .memo-mask-btn{
+    padding-inline: 4px;
+    font-size: 9px;
+  }
+  .memo-context-tools.has-active-table .memo-mask-btn::before{
+    width: 7px;
+    height: 7px;
+    margin-right: 3px;
+  }
+  .memo-table-tools{
+    min-width: 0;
+    padding-left: 9px;
+    border-left: 1px dashed var(--brass);
+    display: grid;
+    align-content: start;
+    gap: 5px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .12s ease;
+  }
+  .memo-table-tools.is-inactive{
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
   .memo-table-tools-head,
   .memo-table-actions{
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 5px;
-  }
-  .memo-table-tools-title{
-    margin-right: auto;
-    color: var(--rust);
-    font: 700 10px/1.3 'Noto Sans KR', sans-serif;
+    flex-wrap: nowrap;
+    gap: 4px;
+    width: max-content;
+    min-width: 100%;
   }
   .memo-table-status{
+    min-width: 108px;
     color: var(--ink-soft);
-    font: 10px/1.3 'IBM Plex Mono', monospace;
+    font: 9px/1.3 'IBM Plex Mono', monospace;
+    white-space: nowrap;
   }
   .memo-table-size-field{
     display: inline-flex;
@@ -1785,21 +1822,21 @@
     font: 600 10px/1 'Noto Sans KR', sans-serif;
   }
   .memo-table-size-input{
-    width: 50px !important;
-    height: 28px;
-    min-height: 28px;
+    width: 42px !important;
+    height: 25px;
+    min-height: 25px;
     padding: 3px 5px !important;
     border-color: var(--line) !important;
     background: rgba(255,255,255,.72) !important;
     font-size: 11px !important;
   }
   .memo-table-action{
-    min-height: 28px;
-    padding: 4px 8px;
+    min-height: 25px;
+    padding: 3px 6px;
     border-color: var(--line);
     background: rgba(255,255,255,.58);
     color: var(--ink);
-    font: 600 10px/1.2 'Noto Sans KR', sans-serif;
+    font: 600 9px/1.2 'Noto Sans KR', sans-serif;
   }
   .memo-table-action:hover{
     background: var(--card);
@@ -1808,6 +1845,16 @@
   .memo-table-action-danger{
     margin-left: auto;
     color: var(--rust);
+  }
+  .memo-table-action:disabled,
+  .memo-table-size-input:disabled{
+    cursor: default;
+    opacity: .42;
+  }
+  .memo-table-action:disabled:hover{
+    border-color: var(--line);
+    background: rgba(255,255,255,.58);
+    color: var(--ink);
   }
   .memo-symbol-btn{
     font-family: 'Fraunces', 'Noto Serif KR', serif;
@@ -2006,11 +2053,21 @@
   }
   .memo-input tr:nth-child(even) td{ background: rgba(191,209,200,.26); }
   @media (max-width: 560px){
-    .memo-table-tools-head{
-      align-items: flex-start;
+    .memo-context-tools.has-active-table{
+      grid-template-columns: minmax(104px, .31fr) minmax(0, .69fr);
+      gap: 6px;
     }
-    .memo-table-tools-title{
-      width: 100%;
+    .memo-context-tools.has-active-table .memo-tool-label{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .memo-context-tools.has-active-table .memo-mask-btn{
+      font-size: 0;
+    }
+    .memo-context-tools.has-active-table .memo-mask-btn::after{
+      content: attr(data-mask-level);
+      font: 700 9px/1 'Noto Sans KR', sans-serif;
     }
     .memo-table-action-danger{
       margin-left: 0;
@@ -2217,31 +2274,32 @@
             <button type="button" class="memo-color-btn memo-color-plum" data-memo-color="plum" aria-label="플럼" title="플럼"><span class="memo-swatch" aria-hidden="true"></span></button>
           </span>
         </div>
-        <div class="memo-tool-group memo-mask-group">
-          <span class="memo-tool-label">선택한 내용을 개념 위계별로 가리기</span>
-          <span class="memo-mask-tools" aria-label="위계별 가리기">
-            <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="1" aria-label="선택 영역 1단계 가리기" title="1단계 개념 가리기">가림 1 · 핵심</button>
-            <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="2" aria-label="선택 영역 2단계 가리기" title="2단계 개념 가리기">가림 2 · 하위</button>
-            <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="3" aria-label="선택 영역 3단계 가리기" title="3단계 개념 가리기">가림 3 · 세부</button>
-          </span>
-        </div>
-      </div>
-      <div class="memo-table-tools" id="memoTableTools" role="toolbar" aria-label="선택한 표 편집" hidden>
-        <div class="memo-table-tools-head">
-          <span class="memo-table-tools-title">선택한 표 편집</span>
-          <span class="memo-table-status" id="memoTableStatus">0행 × 0열</span>
-          <label class="memo-table-size-field">행 <input class="memo-table-size-input" id="memoTableRowsInput" type="number" min="1" max="50" inputmode="numeric" aria-label="표 행 개수"></label>
-          <label class="memo-table-size-field">열 <input class="memo-table-size-input" id="memoTableColumnsInput" type="number" min="1" max="20" inputmode="numeric" aria-label="표 열 개수"></label>
-          <button type="button" class="memo-table-action" data-memo-table-action="resize">개수 적용</button>
-        </div>
-        <div class="memo-table-actions">
-          <button type="button" class="memo-table-action" data-memo-table-action="before">↑ 앞에 줄</button>
-          <button type="button" class="memo-table-action" data-memo-table-action="add-row">행 ＋</button>
-          <button type="button" class="memo-table-action" data-memo-table-action="delete-row">행 －</button>
-          <button type="button" class="memo-table-action" data-memo-table-action="add-column">열 ＋</button>
-          <button type="button" class="memo-table-action" data-memo-table-action="delete-column">열 －</button>
-          <button type="button" class="memo-table-action" data-memo-table-action="after">↓ 뒤에 줄</button>
-          <button type="button" class="memo-table-action memo-table-action-danger" data-memo-table-action="delete-table">표 삭제</button>
+        <div class="memo-context-tools" id="memoContextTools">
+          <div class="memo-tool-group memo-mask-group">
+            <span class="memo-tool-label">선택한 내용을 개념 위계별로 가리기</span>
+            <span class="memo-mask-tools" aria-label="위계별 가리기">
+              <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="1" aria-label="선택 영역 1단계 가리기" title="1단계 개념 가리기">가림 1 · 핵심</button>
+              <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="2" aria-label="선택 영역 2단계 가리기" title="2단계 개념 가리기">가림 2 · 하위</button>
+              <button type="button" class="memo-format-btn memo-mask-btn" data-mask-level="3" aria-label="선택 영역 3단계 가리기" title="3단계 개념 가리기">가림 3 · 세부</button>
+            </span>
+          </div>
+          <div class="memo-table-tools is-inactive" id="memoTableTools" role="toolbar" aria-label="선택한 표 편집" aria-disabled="true">
+            <div class="memo-table-tools-head">
+              <span class="memo-table-status" id="memoTableStatus">표 편집</span>
+              <label class="memo-table-size-field">행 <input class="memo-table-size-input" id="memoTableRowsInput" type="number" min="1" max="50" inputmode="numeric" aria-label="표 행 개수" disabled></label>
+              <label class="memo-table-size-field">열 <input class="memo-table-size-input" id="memoTableColumnsInput" type="number" min="1" max="20" inputmode="numeric" aria-label="표 열 개수" disabled></label>
+              <button type="button" class="memo-table-action" data-memo-table-action="resize" disabled>적용</button>
+            </div>
+            <div class="memo-table-actions">
+              <button type="button" class="memo-table-action" data-memo-table-action="before" disabled>↑ 앞줄</button>
+              <button type="button" class="memo-table-action" data-memo-table-action="add-row" disabled>행＋</button>
+              <button type="button" class="memo-table-action" data-memo-table-action="delete-row" disabled>행－</button>
+              <button type="button" class="memo-table-action" data-memo-table-action="add-column" disabled>열＋</button>
+              <button type="button" class="memo-table-action" data-memo-table-action="delete-column" disabled>열－</button>
+              <button type="button" class="memo-table-action" data-memo-table-action="after" disabled>↓ 뒤줄</button>
+              <button type="button" class="memo-table-action memo-table-action-danger" data-memo-table-action="delete-table" disabled>삭제</button>
+            </div>
+          </div>
         </div>
       </div>
       <div id="memoInput" class="memo-input" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="memoInputLabel" data-placeholder="내용을 적거나 외부 표를 그대로 붙여넣으세요."></div>
@@ -2347,10 +2405,12 @@ const memoInput = $('memoInput');
 const memoClearBtn = $('memoClearBtn');
 const memoFontSelect = $('memoFontSelect');
 const memoTableBtn = $('memoTableBtn');
+const memoContextTools = $('memoContextTools');
 const memoTableTools = $('memoTableTools');
 const memoTableStatus = $('memoTableStatus');
 const memoTableRowsInput = $('memoTableRowsInput');
 const memoTableColumnsInput = $('memoTableColumnsInput');
+const memoTableActionBtns = memoTableTools.querySelectorAll('[data-memo-table-action]');
 const memoMiddleDotBtn = $('memoMiddleDotBtn');
 const memoToggleBtn = $('memoToggleBtn');
 const memoFormatBtns = document.querySelectorAll('.memo-format-btn[data-command]');
@@ -3273,7 +3333,15 @@ function clearActiveMemoTable(){
   activeMemoCell?.classList.remove('is-memo-cell-active');
   activeMemoTable = null;
   activeMemoCell = null;
-  memoTableTools.hidden = true;
+  memoContextTools.classList.remove('has-active-table');
+  memoTableTools.classList.add('is-inactive');
+  memoTableTools.setAttribute('aria-disabled', 'true');
+  memoTableStatus.textContent = '표 셀을 선택하세요';
+  memoTableRowsInput.value = '';
+  memoTableColumnsInput.value = '';
+  memoTableRowsInput.disabled = true;
+  memoTableColumnsInput.disabled = true;
+  memoTableActionBtns.forEach(button => { button.disabled = true; });
 }
 
 function updateMemoTableTools(){
@@ -3289,7 +3357,12 @@ function updateMemoTableTools(){
   memoTableStatus.textContent = `${dimensions.rows}행 × ${dimensions.columns}열${position}`;
   memoTableRowsInput.value = dimensions.rows;
   memoTableColumnsInput.value = dimensions.columns;
-  memoTableTools.hidden = false;
+  memoTableRowsInput.disabled = false;
+  memoTableColumnsInput.disabled = false;
+  memoTableActionBtns.forEach(button => { button.disabled = false; });
+  memoContextTools.classList.add('has-active-table');
+  memoTableTools.classList.remove('is-inactive');
+  memoTableTools.setAttribute('aria-disabled', 'false');
 }
 
 function setActiveMemoTable(table, cell = null){

@@ -1871,6 +1871,11 @@
     font-size: 19px;
     font-weight: 600;
   }
+  .memo-divider-btn{
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 17px;
+    font-weight: 500;
+  }
   .memo-toggle-btn{
     width: auto;
     min-width: 58px;
@@ -2040,6 +2045,12 @@
     table-layout: auto;
     font: 12.5px/1.55 'Noto Serif KR', serif;
     white-space: normal;
+  }
+  .memo-input hr{
+    height: 0;
+    margin: 18px 0;
+    border: 0;
+    border-top: 1px solid var(--rust-dim);
   }
   .memo-input table.is-memo-table-active{
     outline: 2px solid rgba(143,63,90,.48);
@@ -2269,6 +2280,7 @@
             <button type="button" class="memo-format-btn" data-command="bold" aria-label="굵게" aria-pressed="false" title="굵게">B</button>
             <button type="button" class="memo-format-btn" data-command="italic" aria-label="기울임" aria-pressed="false" title="기울임">I</button>
             <button type="button" class="memo-format-btn" data-command="underline" aria-label="밑줄" aria-pressed="false" title="밑줄">U</button>
+            <button type="button" class="memo-format-btn memo-divider-btn" id="memoDividerBtn" aria-label="구분선 삽입" title="구분선 삽입">―</button>
             <button type="button" class="memo-format-btn memo-table-btn" id="memoTableBtn" aria-label="3×3 표 삽입" title="3×3 표 삽입">표</button>
             <button type="button" class="memo-format-btn memo-symbol-btn" id="memoMiddleDotBtn" aria-label="가운데점 입력" title="가운데점 입력">·</button>
             <button type="button" class="memo-format-btn memo-toggle-btn" id="memoToggleBtn" aria-label="선택 영역을 접고 펴는 토글로 묶기" title="선택 영역을 토글로 묶기 · 선택이 없으면 새 토글 만들기">▸ 토글</button>
@@ -2313,7 +2325,7 @@
         </div>
       </div>
       <div id="memoInput" class="memo-input" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="memoInputLabel" data-placeholder="내용을 적거나 외부 표를 그대로 붙여넣으세요."></div>
-      <p class="memo-guide">표의 셀을 누르면 행·열 개수와 앞뒤 입력 줄을 조절할 수 있습니다. 토글의 ＋↑·＋↓는 앞뒤에 입력 줄을 만들고 ×는 블록을 삭제합니다. 제목에서 Enter를 누르면 본문으로 이동하며, · 버튼은 가운데점을 입력합니다.</p>
+      <p class="memo-guide">― 버튼은 구분선을 넣고 바로 아래에 입력 줄을 만듭니다. 표의 셀을 누르면 행·열 개수와 앞뒤 입력 줄을 조절할 수 있습니다. 토글의 ＋↑·＋↓는 앞뒤에 입력 줄을 만들고 ×는 블록을 삭제합니다.</p>
     </div>
     <div class="dialog-actions">
       <button type="button" class="toggle-btn memo-clear-btn" id="memoClearBtn">메모 지우기</button>
@@ -2414,6 +2426,7 @@ const memoTarget = $('memoTarget');
 const memoInput = $('memoInput');
 const memoClearBtn = $('memoClearBtn');
 const memoFontSelect = $('memoFontSelect');
+const memoDividerBtn = $('memoDividerBtn');
 const memoTableBtn = $('memoTableBtn');
 const memoContextTools = $('memoContextTools');
 const memoTableTools = $('memoTableTools');
@@ -3255,6 +3268,15 @@ function focusMemoEditable(node, { select = false, atEnd = false } = {}){
   restoreMemoPageScroll(scrollPosition);
 }
 
+function insertMemoDivider(){
+  const token = `memo-divider-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  insertMemoHTML(`<hr><div data-memo-divider-after="${escapeAttr(token)}"><br></div>`);
+  const line = memoInput.querySelector(`[data-memo-divider-after="${CSS.escape(token)}"]`);
+  if (!line) return;
+  line.removeAttribute('data-memo-divider-after');
+  focusMemoEditable(line);
+}
+
 function createMemoBlankLine(){
   const line = document.createElement('div');
   line.appendChild(document.createElement('br'));
@@ -4003,6 +4025,7 @@ memoColorBtns.forEach(button => {
 
 memoMaskBtns.forEach(button => button.addEventListener('click', () => applyMemoMask(button.dataset.maskLevel)));
 
+memoDividerBtn.addEventListener('click', insertMemoDivider);
 memoTableBtn.addEventListener('click', () => {
   const rows = [
     ['항목', '내용', '비교'],
